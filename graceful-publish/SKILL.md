@@ -30,7 +30,7 @@ description: 为 Spring Boot / Spring Cloud 应用接入 jt-platform-graceful-st
    - ensure Apollo loads `graceful.properties`
    - add a checked-in template such as `docs/graceful.properties.template` when runtime config lives outside the repo
    - make custom executors wait for in-flight work before shutdown
-6. Keep rollout conservative only for middleware with unclear lifecycle compatibility. The main example is RocketMQ custom listener wrappers such as `@RocketMQDynamicListener`.
+6. Keep rollout conservative only for middleware with unclear lifecycle compatibility. If a custom RocketMQ listener wrapper such as `@RocketMQDynamicListener` is already confirmed compatible in the target project, allow `rocket-consumer` to be enabled and record that conclusion in the output.
 7. Document what was detected, what is recommended to enable, what stays disabled, and what still needs environment validation.
 
 ## Output
@@ -60,7 +60,7 @@ Use the following signals when scanning the repo:
 | `stream-producer` | output bindings, `MessageChannel`, `MessageBuilder`, producer classes | Enable when detected |
 | `rocket-producer` | `RocketMQTemplate`, `RocketMQDynamicPublisher`, `syncSend`, `asyncSend` | Enable when detected |
 | `rocket-consumer` standard | `@RocketMQMessageListener`, `DefaultMQPushConsumer`, `RocketMQListener` | Enable when detected |
-| `rocket-consumer` custom wrapper | `@RocketMQDynamicListener` or another custom wrapper | Keep disabled until compatibility is validated |
+| `rocket-consumer` custom wrapper | `@RocketMQDynamicListener` or another custom wrapper | Enable after project-level compatibility is validated; otherwise keep disabled |
 | `web-server` | `spring-boot-starter-web` | Enable when detected |
 | `xxl-job` | `xxl-job-core`, `@XxlJob`, `XxlJobSpringExecutor` | Enable when detected |
 | custom thread pools | `ForkJoinPool`, `ThreadPoolExecutor`, `ThreadPoolTaskExecutor`, custom executor beans | Always assess shutdown behavior |
@@ -74,7 +74,7 @@ Use the following signals when scanning the repo:
   - corresponding consumer or producer code signals
 - For RocketMQ consumer:
   - enable when standard listener signals are detected
-  - keep disabled when the repo uses custom wrappers such as `@RocketMQDynamicListener`, and explicitly write the reason into the output document
+  - if the repo uses custom wrappers such as `@RocketMQDynamicListener`, enable only when compatibility is confirmed for that project; otherwise keep disabled and explicitly write the reason into the output document
 - If the startup class hardcodes Apollo namespaces with `@EnableApolloConfig`, add `graceful.properties` there or the new config will not load.
 - If a rollout intentionally overrides a detected plugin to `false`, explain the override in the generated markdown document.
 
@@ -134,8 +134,8 @@ Apply these construction rules:
 - `kafka-consumer`, `kafka-producer`, `feign`, `feign.pre-request`
   - set from scan results, not from a hardcoded conservative default
 - `rocket-consumer`
-  - set to `true` only when standard RocketMQ consumer signals are detected and no custom wrapper risk blocks it
-  - keep `false` when custom wrappers such as `@RocketMQDynamicListener` are present until compatibility is verified
+  - set to `true` when RocketMQ consumer signals are detected and no unresolved compatibility risk blocks it
+  - if custom wrappers such as `@RocketMQDynamicListener` are present, use the project-specific compatibility conclusion instead of a hardcoded `false`
 
 ## Markdown Output Template
 
@@ -160,7 +160,7 @@ Write the scan/configuration document with this structure:
 6. Next actions
    - list remaining code changes or validation work
 7. Special notes
-   - especially for custom RocketMQ listener wrappers or risky rollout overrides
+   - especially for custom RocketMQ listener wrappers, including whether compatibility has been confirmed in the target project, or risky rollout overrides
 
 ## Code Change Checklist
 
@@ -198,3 +198,4 @@ Write the scan/configuration document with this structure:
   - Feign request interceptor ordering and client timeout behavior when Feign is detected
   - custom thread-pool queue behavior
 - If runtime validation cannot be executed locally, leave a concrete test checklist in the repo.
+- When the user explicitly confirms that a custom RocketMQ wrapper is compatible in the current project, treat that as validated project context and reflect it in both the generated markdown document and `graceful.properties`.
