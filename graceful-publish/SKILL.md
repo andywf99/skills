@@ -1,6 +1,6 @@
 ---
 name: jt-graceful-lifecycle
-description: 为 Spring Boot / Spring Cloud 应用接入 jt-platform-graceful-starter，并在分析优雅启停、优雅关停、优雅上下线、Apollo graceful.properties、Eureka、Feign、Hystrix、Redis、Spring Cloud Stream、RocketMQ、XXL-Job、自定义线程池改造时使用。适用于需要扫描当前代码、识别项目实际使用的中间件、根据扫描结果输出配置文档、补充 starter 依赖和 Apollo namespace、生成接入计划、输出验收清单或补充线程池关停策略的场景。
+description: 为 Spring Boot / Spring Cloud 应用接入 jt-platform-graceful-starter，并在分析优雅启停、优雅关停、优雅上下线、Apollo graceful namespace / graceful.properties 内容、Eureka、Feign、Hystrix、Redis、Spring Cloud Stream、RocketMQ、XXL-Job、自定义线程池改造时使用。适用于需要扫描当前代码、识别项目实际使用的中间件、根据扫描结果输出配置文档、补充 starter 依赖和 Apollo namespace、生成接入计划、输出验收清单或补充线程池关停策略的场景。
 ---
 
 # JT Graceful Lifecycle
@@ -24,10 +24,10 @@ description: 为 Spring Boot / Spring Cloud 应用接入 jt-platform-graceful-st
 3. Check whether Apollo explicitly loads namespaces through `@EnableApolloConfig(...)`.
 4. Generate two outputs from the scan result:
    - a markdown scan/configuration document
-   - a `graceful.properties` recommendation for Apollo
+   - a `graceful.properties` content recommendation for Apollo
 5. If the user wants code changes, prefer the smallest safe change set:
    - add `com.yl:jt-platform-graceful-starter`
-   - ensure Apollo loads `graceful.properties`
+   - ensure Apollo loads the `graceful` namespace
    - add a checked-in template such as `docs/graceful.properties.template` when runtime config lives outside the repo
    - make custom executors wait for in-flight work before shutdown
 6. Keep rollout conservative only for middleware with unclear lifecycle compatibility. If a custom RocketMQ listener wrapper such as `@RocketMQDynamicListener` is already confirmed compatible in the target project, allow `rocket-consumer` to be enabled and record that conclusion in the output.
@@ -75,7 +75,7 @@ Use the following signals when scanning the repo:
 - For RocketMQ consumer:
   - enable when standard listener signals are detected
   - if the repo uses custom wrappers such as `@RocketMQDynamicListener`, enable only when compatibility is confirmed for that project; otherwise keep disabled and explicitly write the reason into the output document
-- If the startup class hardcodes Apollo namespaces with `@EnableApolloConfig`, add `graceful.properties` there or the new config will not load.
+- If the startup class hardcodes Apollo namespaces with `@EnableApolloConfig`, add the `graceful` namespace there or the new config will not load. Do not append `.properties` in the annotation namespace list.
 - If a rollout intentionally overrides a detected plugin to `false`, explain the override in the generated markdown document.
 
 ## Manual Scan Procedure
@@ -97,7 +97,7 @@ When no helper script is available, scan manually in this order:
    - identify every custom executor bean
    - check whether shutdown waiting is already implemented
 6. Apollo config
-   - verify whether `graceful.properties` must be added to an explicit namespace list
+   - verify whether the `graceful` namespace must be added to an explicit namespace list
 
 ## graceful.properties Construction
 
@@ -144,7 +144,7 @@ Write the scan/configuration document with this structure:
 1. Project summary
    - project name
    - whether starter dependency is present
-   - whether Apollo already loads `graceful.properties`
+   - whether Apollo already loads the `graceful` namespace
    - count of XXL-Job handlers
    - count of custom executor beans
 2. Key dependencies
@@ -154,7 +154,7 @@ Write the scan/configuration document with this structure:
 4. Apollo check
    - startup class
    - detected namespace list
-   - whether `graceful.properties` is missing
+   - whether the `graceful` namespace is missing
 5. Recommended `graceful.properties`
    - include a complete properties block
 6. Next actions
@@ -165,10 +165,10 @@ Write the scan/configuration document with this structure:
 ## Code Change Checklist
 
 - Add `com.yl:jt-platform-graceful-starter:1.0.0-RELEASE` when it is missing.
-- If `@EnableApolloConfig(...)` exists and hardcodes namespaces, add `graceful.properties`.
+- If `@EnableApolloConfig(...)` exists and hardcodes namespaces, add the `graceful` namespace rather than `graceful.properties`.
 - For `ThreadPoolTaskExecutor`, set:
   - `waitForTasksToCompleteOnShutdown=true`
-  - `awaitTerminationSeconds`
+  - `awaitTerminationSeconds`, sourced from configuration when the project already externalizes graceful timeout values
 - For raw `ExecutorService`, `ThreadPoolExecutor`, or `ForkJoinPool`:
   - call `shutdown()`
   - wait with bounded timeout
@@ -178,7 +178,7 @@ Write the scan/configuration document with this structure:
 ## Thread Pools
 
 - Treat app-defined executors as first-class shutdown resources; the starter cannot infer business semantics for queued work.
-- For `ThreadPoolTaskExecutor`, set `waitForTasksToCompleteOnShutdown=true` and `awaitTerminationSeconds`.
+- For `ThreadPoolTaskExecutor`, set `waitForTasksToCompleteOnShutdown=true` and `awaitTerminationSeconds`. If graceful timeout properties already exist or are being introduced, wire the code to those properties instead of hardcoding time values.
 - For raw `ExecutorService`, `ThreadPoolExecutor`, or `ForkJoinPool`, add an explicit shutdown hook that:
   - calls `shutdown()`
   - waits for a bounded timeout
