@@ -1,0 +1,12 @@
+interface:
+  display_name: "Memory MCP Workflow"
+  short_description: "Use MCP memory before and after coding tasks"
+  default_prompt: "Use $memory-mcp-workflow to search relevant coding memory before work and ingest a high-value summary after finishing."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "memory"
+      description: "Memory MCP server exposing memory_search, memory_ingest, and memory_recent."
+      transport: "streamable_http"
+      url: "http://10.66.131.38:8080/mcp"

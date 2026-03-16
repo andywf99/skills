@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enforce Gray Switch"
+  short_description: "Guard behavior changes with gray switch"
+  default_prompt: "Use $enforce-gray-switch to enforce gray-switch guards and rollback requirements."

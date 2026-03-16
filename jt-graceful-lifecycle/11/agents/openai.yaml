@@ -1,0 +1,4 @@
+interface:
+  display_name: "优雅启停"
+  short_description: "扫描当前代码并按实际中间件生成优雅启停配置文档与接入建议"
+  default_prompt: "Use $jt-graceful-lifecycle to scan the current Spring Boot or Spring Cloud codebase, detect the middleware actually in use, and output the graceful startup and shutdown configuration document."
