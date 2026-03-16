@@ -1,17 +1,17 @@
 ---
 name: enforce-gray-switch
-description: "Enforce gray-switch guarding and config-only rollback for production-behavior changes in Java/Spring Boot services. Use when modifying business logic, adding new logic that affects existing flows, changing API semantics/contracts, or handling security/performance/legacy-logic changes."
+description: "为 Java/Spring Boot 服务中的生产行为变更加上 gray switch 守护，并确保可以通过纯配置即时回滚。适用于修改业务逻辑、添加影响既有流程的新逻辑、调整 API 语义/契约，或处理安全、性能、遗留逻辑变更时。"
 ---
 
-# Enforce Gray Switch
+# 灰度开关约束
 
-## Goal
+## 目标
 
-Guarantee any production-behavior change is guarded by a gray switch and can be rolled back via config only.
+保证任何生产行为变更都必须受 gray switch 保护，并且能够仅通过配置回滚。
 
-## Required Dependency
+## 必需依赖
 
-Ensure this dependency exists:
+确保存在以下依赖：
 
 ```xml
 <dependency>
@@ -21,51 +21,51 @@ Ensure this dependency exists:
 </dependency>
 ```
 
-## Gray Switch Key Spec
+## 灰度开关键规范
 
-Naming convention (mandatory):
+命名规范（强制）：
 
 - `gray-switch.module.{module}.{feature}`
 
-Examples:
+示例：
 
 - `gray-switch.module.example.gray-test`
 - `gray-switch.module.example.feature-toggle.enabled`
 - `gray-switch.module.example.feature-toggle.condition`
 
-Condition examples:
+条件示例：
 
 - `#{#dto.code == 'X001'}`
 - `#{['X001','X002'].contains(#dto.code)}`
 - `#{#dto.codes.contains('X001')}`
 
-Config rules:
+配置规则：
 
-- Apollo config is optional.
-- If not configured, the switch defaults to enabled.
+- Apollo 配置可选。
+- 如果未配置，开关默认开启。
 
-## Mandatory Rules (Hard Constraints)
+## 强制规则（硬约束）
 
-- Preserve old logic.
-- When modifying existing logic, copy the original implementation.
-- Rename old method with `Old` suffix.
-- Mark old method with `@Deprecated`.
-- Never delete or inline-replace old logic without fallback.
-- New logic must be guarded by gray switch.
-- Old logic must be executable when gray is off.
-- Rollback must be config-only and instant.
+- 保留旧逻辑。
+- 修改既有逻辑时，复制原始实现。
+- 将旧方法重命名为带 `Old` 后缀。
+- 用 `@Deprecated` 标记旧方法。
+- 绝不允许删除旧逻辑，也不允许直接内联替换且不保留回退路径。
+- 新逻辑必须受 gray switch 保护。
+- gray 关闭时，旧逻辑必须仍然可执行。
+- 回滚必须是纯配置、且立即生效。
 
-### Exception: Simple New Logic (No need to create new method/class)
+### 例外：简单新增逻辑（不需要创建新方法/类）
 
-When the added logic is simple, you can use inline `if` / `if-else` with gray switch directly in the original method. No need to extract new method or create `*Old` method.
+当新增逻辑足够简单时，可以直接在原方法中使用带 gray switch 的内联 `if` / `if-else`，不需要额外抽取新方法，也不需要创建 `*Old` 方法。
 
-Simple logic is defined as:
+“简单逻辑”定义如下：
 
-1. Fully new logic guarded by `if (GrayUtils.isGray(...))`, and the code inside the `if` block is no more than 10 lines.
-2. Simple `get` / `set` style adjustment.
-3. Tiny change with no more than 5 lines.
+1. 完全新增的逻辑由 `if (GrayUtils.isGray(...))` 保护，且 `if` 代码块不超过 10 行。
+2. 简单的 `get` / `set` 风格调整。
+3. 不超过 5 行的小改动。
 
-Examples:
+示例：
 
 ```java
 if (GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-a", "sample gray switch A"))) {
@@ -100,12 +100,12 @@ if (!GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-d", "samp
     target.setUpdateTime(now);
 }
 ```
+
 ```java
 if (!GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-d", "sample gray switch D"))) {
     target.getvalue();
 }
 ```
-
 
 ```java
 if (GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-e", "sample gray switch E"))) {
@@ -117,9 +117,9 @@ if (GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-e", "sampl
 }
 ```
 
-## Implementation Patterns
+## 实现模式
 
-Pattern 1: Method-level gray (AOP)
+模式 1：方法级灰度（AOP）
 
 ```java
 import com.yl.sqs.gray.annotation.Gray;
@@ -138,7 +138,7 @@ public Result testOld(DTO dto) {
 }
 ```
 
-Pattern 2: Local gray (with return value)
+模式 2：局部灰度（有返回值）
 
 ```java
 Result result = GrayUtils.execute(
@@ -155,11 +155,11 @@ Result result = GrayUtils.execute(
 );
 ```
 
-Note:
+注意：
 
-- `result` may be null. Handle NPE risk in the caller.
+- `result` 可能为 `null`，调用方要处理 NPE 风险。
 
-Pattern 3: Local gray (without return value)
+模式 3：局部灰度（无返回值）
 
 ```java
 GrayUtils.execute(
@@ -173,7 +173,7 @@ GrayUtils.execute(
           );
 ```
 
-Pattern 4: Conditional gray
+模式 4：条件灰度
 
 ```java
 if (GrayUtils.isGray(
@@ -185,7 +185,7 @@ if (GrayUtils.isGray(
         }
 ```
 
-Pattern 5: XML (MyBatis) gray
+模式 5：XML（MyBatis）灰度
 
 ```xml
 <choose>
@@ -202,30 +202,30 @@ Pattern 5: XML (MyBatis) gray
 </choose>
 ```
 
-## Execution Steps
+## 执行步骤
 
-1. Detect triggers and confirm the skill applies.
-2. Ensure dependency exists or add it.
-3. Copy the original logic to an `Old` method and mark it `@Deprecated`.
-4. Introduce a gray switch key following naming rules.
-5. Guard new logic with gray switch and ensure old logic runs when gray is off.
-6. Ensure rollback is config-only and instant.
-7. Add or update tests for gray on and off.
-8. Run relevant checks or state they were not run.
+1. 识别触发条件并确认该 skill 适用。
+2. 确保依赖存在；如不存在则补上。
+3. 将原始逻辑复制到 `Old` 方法，并用 `@Deprecated` 标记。
+4. 按命名规范引入 gray switch key。
+5. 用 gray switch 保护新逻辑，并确保 gray 关闭时旧逻辑仍然执行。
+6. 确保回滚是纯配置、且能立即生效。
+7. 为 gray 开启和关闭两种情况补充或更新测试。
+8. 运行相关检查；如果未运行，要明确说明。
 
-## Self-Check (Mandatory)
+## 自检（必做）
 
-Before final output, verify:
+在最终输出前，检查以下事项：
 
-- Gray dependency exists
-- Gray switch key follows naming rules
-- Old logic is preserved and deprecated
-- New logic is guarded by gray switch
-- Rollback is config-only and instant
+- 灰度依赖已存在
+- gray switch key 符合命名规范
+- 旧逻辑已保留且已废弃标记
+- 新逻辑已受 gray switch 保护
+- 回滚是纯配置且立即生效
 
-If any item fails, reject code generation.
+如果任一项不满足，拒绝生成代码。
 
-## Final Principle
+## 最终原则
 
-No gray switch, no merge.
-No rollback path, no release.
+没有 gray switch，不允许合并。
+没有回滚路径，不允许发布。
