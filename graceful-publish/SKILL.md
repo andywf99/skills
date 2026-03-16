@@ -1,107 +1,101 @@
 ---
 name: jt-graceful-lifecycle
-description: 为 Spring Boot / Spring Cloud 应用接入 jt-platform-graceful-starter，并在分析优雅启停、优雅关停、优雅上下线、Apollo graceful namespace / graceful.properties 内容、Eureka、Feign、Hystrix、Redis、Spring Cloud Stream、RocketMQ、XXL-Job、自定义线程池改造时使用。适用于需要扫描当前代码、识别项目实际使用的中间件、根据扫描结果输出配置文档、补充 starter 依赖和 Apollo namespace、生成接入计划、输出验收清单或补充线程池关停策略的场景。
+description: 为 Spring Boot / Spring Cloud 应用接入 jt-platform-graceful-starter，并在分析优雅启停、优雅关停、优雅上下线、Apollo graceful namespace / graceful.properties 内容、Eureka、Feign、Hystrix、Redis、Spring Cloud Stream、RocketMQ、XXL-Job 时使用。适用于需要扫描当前代码、识别项目实际使用的中间件、根据扫描结果输出配置文档、补充 starter 依赖和 Apollo namespace、生成接入计划或输出验收清单的场景。
 ---
 
-# JT Graceful Lifecycle
+# JT 优雅生命周期
 
-## Self-Contained Rule
+## 自包含规则
 
-- This skill must work with `SKILL.md` alone.
-- Do not rely on bundled scripts, references, or helper files to complete the task.
-- If helper files exist, treat them as optional accelerators; the same result must still be achievable by following this markdown only.
+- 这个 skill 必须仅凭 `SKILL.md` 就能工作。
+- 不要依赖打包的脚本、参考资料或辅助文件才能完成任务。
+- 如果存在辅助文件，只把它们当作可选加速器；即使不使用它们，也必须能够仅按照本文档完成同样的结果。
 
-## Workflow
+## 工作流程
 
-1. Read the current code before proposing any configuration:
+1. 在提出任何配置建议之前，先阅读当前代码：
    - `pom.xml`
-   - the startup class containing `@SpringBootApplication`
-   - `bootstrap.yml`, `application.yml`, `application.properties`, and Apollo-related config
-   - message listener and producer classes
-   - XXL-Job config and `@XxlJob` handlers
-   - custom thread-pool config
-2. Build a middleware inventory from actual code and dependency signals, not from assumptions.
-3. Check whether Apollo explicitly loads namespaces through `@EnableApolloConfig(...)`.
-4. Generate two outputs from the scan result:
-   - a markdown scan/configuration document
-   - a `graceful.properties` content recommendation for Apollo
-5. If the user wants code changes, prefer the smallest safe change set:
-   - add `com.yl:jt-platform-graceful-starter`
-   - ensure Apollo loads the `graceful` namespace
-   - add a checked-in template such as `docs/graceful.properties.template` when runtime config lives outside the repo
-   - make custom executors wait for in-flight work before shutdown
-6. Keep rollout conservative only for middleware with unclear lifecycle compatibility. If a custom RocketMQ listener wrapper such as `@RocketMQDynamicListener` is already confirmed compatible in the target project, allow `rocket-consumer` to be enabled and record that conclusion in the output.
-7. Document what was detected, what is recommended to enable, what stays disabled, and what still needs environment validation.
+   - 包含 `@SpringBootApplication` 的启动类
+   - `bootstrap.yml`、`application.yml`、`application.properties` 以及 Apollo 相关配置
+   - 消息监听与消息生产相关类
+   - XXL-Job 配置和 `@XxlJob` 处理器
+2. 基于真实代码和依赖信号梳理中间件清单，不要靠猜测。
+3. 检查 Apollo 是否通过 `@EnableApolloConfig(...)` 显式加载了 namespace。
+4. 根据扫描结果产出两类内容：
+   - 一份 markdown 扫描/配置文档
+   - 一份给 Apollo 使用的 `graceful.properties` 内容建议
+5. 如果用户需要代码改动，优先选择最小且安全的改动集：
+   - 添加 `com.yl:jt-platform-graceful-starter`
+   - 确保 Apollo 加载 `graceful` namespace
+   - 当运行时配置不在仓库中时，补一个仓库内模板，如 `docs/graceful.properties.template`
+6. 只有在中间件生命周期兼容性不明确时，才保守发布。如果项目里自定义 RocketMQ 监听包装器（如 `@RocketMQDynamicListener`）已经确认兼容，则允许启用 `rocket-consumer`，并在输出中记录这一结论。
+7. 清楚记录：检测到了什么、建议启用什么、哪些保持关闭、哪些仍需要环境验证。
 
-## Output
+## 输出要求
 
-- Always produce a scan-based markdown document that explains which middleware was found in the current code and why each graceful plugin is enabled or disabled.
-- Always produce or update a configuration document for the target project:
-  - `graceful.properties` content for Apollo
-  - or a checked-in template such as `docs/graceful.properties.template`
-- Keep the configuration document aligned with the scan result. Do not enable middleware plugins that are not supported by the detected code.
-- For `kafka` and `feign` related plugins, prefer scan-based defaults over hardcoded `false`.
+- 始终生成一份基于扫描结果的 markdown 文档，说明当前代码里发现了哪些中间件，以及每个 graceful plugin 为什么启用或禁用。
+- 始终为目标项目生成或更新一份配置文档：
+  - Apollo 使用的 `graceful.properties` 内容
+  - 或者仓库内模板，例如 `docs/graceful.properties.template`
+- 配置文档必须和扫描结果保持一致。不要启用代码中未检测到或不受支持的中间件插件。
+- 对于 `kafka` 和 `feign` 相关插件，优先采用基于扫描结果的默认值，而不是硬编码成 `false`。
 
-## Detection Rules
+## 检测规则
 
-Use the following signals when scanning the repo:
+扫描仓库时使用以下信号：
 
-| Plugin / Area | Typical dependency or code signals | Default recommendation |
+| 插件 / 领域 | 常见依赖或代码信号 | 默认建议 |
 | --- | --- | --- |
-| `dataSource` | `mysql-connector-java`, Druid, MyBatis, ShardingSphere, datasource config | Enable when detected |
-| `eureka` | `spring-cloud-starter-netflix-eureka-client`, `@EnableDiscoveryClient`, `@EnableEurekaClient` | Enable when detected |
-| `feign` | `spring-cloud-starter-openfeign`, `@EnableFeignClients`, Feign client interfaces | Enable when detected |
-| `feign.pre-request` | `RequestInterceptor`, `RequestTemplate`, existing Feign request hook code | Enable when detected |
-| `hystrix` | `spring-cloud-starter-netflix-hystrix`, `@EnableHystrix` | Enable when detected |
-| `kafka-consumer` | `spring-kafka`, `kafka-clients`, `spring-cloud-stream-binder-kafka`, `@KafkaListener`, listener container factory, `ConsumerFactory` | Enable when detected |
-| `kafka-producer` | `spring-kafka`, `kafka-clients`, `spring-cloud-stream-binder-kafka`, `KafkaTemplate`, `KafkaProducer`, `ProducerFactory` | Enable when detected |
-| `redis` | Redisson, Redis starter, `RedisTemplate`, `RedissonClient`, custom Redis utils | Enable when detected |
-| `stream-consumer` | `@StreamListener`, `@EnableBinding` input interface, consumer package | Enable when detected |
-| `stream-producer` | output bindings, `MessageChannel`, `MessageBuilder`, producer classes | Enable when detected |
-| `rocket-producer` | `RocketMQTemplate`, `RocketMQDynamicPublisher`, `syncSend`, `asyncSend` | Enable when detected |
-| `rocket-consumer` standard | `@RocketMQMessageListener`, `DefaultMQPushConsumer`, `RocketMQListener` | Enable when detected |
-| `rocket-consumer` custom wrapper | `@RocketMQDynamicListener` or another custom wrapper | Enable after project-level compatibility is validated; otherwise keep disabled |
-| `web-server` | `spring-boot-starter-web` | Enable when detected |
-| `xxl-job` | `xxl-job-core`, `@XxlJob`, `XxlJobSpringExecutor` | Enable when detected |
-| custom thread pools | `ForkJoinPool`, `ThreadPoolExecutor`, `ThreadPoolTaskExecutor`, custom executor beans | Always assess shutdown behavior |
+| `dataSource` | `mysql-connector-java`、Druid、MyBatis、ShardingSphere、数据源配置 | 检测到则启用 |
+| `eureka` | `spring-cloud-starter-netflix-eureka-client`、`@EnableDiscoveryClient`、`@EnableEurekaClient` | 检测到则启用 |
+| `feign` | `spring-cloud-starter-openfeign`、`@EnableFeignClients`、Feign client 接口 | 检测到则启用 |
+| `feign.pre-request` | `RequestInterceptor`、`RequestTemplate`、现有 Feign 请求钩子代码 | 检测到则启用 |
+| `hystrix` | `spring-cloud-starter-netflix-hystrix`、`@EnableHystrix` | 检测到则启用 |
+| `kafka-consumer` | `spring-kafka`、`kafka-clients`、`spring-cloud-stream-binder-kafka`、`@KafkaListener`、listener container factory、`ConsumerFactory` | 检测到则启用 |
+| `kafka-producer` | `spring-kafka`、`kafka-clients`、`spring-cloud-stream-binder-kafka`、`KafkaTemplate`、`KafkaProducer`、`ProducerFactory` | 检测到则启用 |
+| `redis` | Redisson、Redis starter、`RedisTemplate`、`RedissonClient`、自定义 Redis 工具类 | 检测到则启用 |
+| `stream-consumer` | `@StreamListener`、`@EnableBinding` 输入接口、consumer 包 | 检测到则启用 |
+| `stream-producer` | output bindings、`MessageChannel`、`MessageBuilder`、producer 类 | 检测到则启用 |
+| `rocket-producer` | `RocketMQTemplate`、`RocketMQDynamicPublisher`、`syncSend`、`asyncSend` | 检测到则启用 |
+| `rocket-consumer` 标准监听 | `@RocketMQMessageListener`、`DefaultMQPushConsumer`、`RocketMQListener` | 检测到则启用 |
+| `rocket-consumer` 自定义包装 | `@RocketMQDynamicListener` 或其他自定义包装器 | 项目级兼容性验证通过后再启用，否则保持关闭 |
+| `web-server` | `spring-boot-starter-web` | 检测到则启用 |
+| `xxl-job` | `xxl-job-core`、`@XxlJob`、`XxlJobSpringExecutor` | 检测到则启用 |
 
-## Decision Rules
+## 决策规则
 
-- Set plugin switches from detected project usage, not from fixed defaults.
-- If `feign.pre-request` is detected, also treat `feign` as detected.
-- For Kafka, require both:
-  - Kafka-related dependency signals
-  - corresponding consumer or producer code signals
-- For RocketMQ consumer:
-  - enable when standard listener signals are detected
-  - if the repo uses custom wrappers such as `@RocketMQDynamicListener`, enable only when compatibility is confirmed for that project; otherwise keep disabled and explicitly write the reason into the output document
-- If the startup class hardcodes Apollo namespaces with `@EnableApolloConfig`, add the `graceful` namespace there or the new config will not load. Do not append `.properties` in the annotation namespace list.
-- If a rollout intentionally overrides a detected plugin to `false`, explain the override in the generated markdown document.
+- 插件开关要根据项目真实检测结果设置，不要使用固定默认值。
+- 如果检测到 `feign.pre-request`，也要视为检测到了 `feign`。
+- 对 Kafka 必须同时满足：
+  - Kafka 相关依赖信号
+  - 对应的 consumer 或 producer 代码信号
+- 对 RocketMQ consumer：
+  - 检测到标准监听信号时启用
+  - 如果仓库使用了 `@RocketMQDynamicListener` 这类自定义包装器，则只有在该项目确认兼容后才启用；否则保持关闭，并在输出文档中明确写出原因
+- 如果启动类通过 `@EnableApolloConfig` 硬编码了 namespace 列表，必须把 `graceful` 加进去，否则新配置不会生效。不要在注解的 namespace 列表里写成 `.properties` 后缀。
+- 如果发布策略有意把某个已检测到的插件强制设为 `false`，必须在生成的 markdown 文档中解释原因。
 
-## Manual Scan Procedure
+## 手工扫描步骤
 
-When no helper script is available, scan manually in this order:
+当没有可用辅助脚本时，按以下顺序手工扫描：
 
 1. `pom.xml`
-   - collect dependencies related to Eureka, Feign, Hystrix, Kafka, Redis, Stream, RocketMQ, XXL-Job, datasource, and web.
-2. Startup class
-   - check `@EnableDiscoveryClient`, `@EnableFeignClients`, `@EnableHystrix`, `@EnableApolloConfig`.
-3. Messaging code
-   - check Stream consumers and producers
-   - check Kafka listeners and producers
-   - check RocketMQ listeners and producers
-4. Scheduler code
-   - count `@XxlJob` handlers
-   - locate `XxlJobSpringExecutor`
-5. Thread-pool code
-   - identify every custom executor bean
-   - check whether shutdown waiting is already implemented
-6. Apollo config
-   - verify whether the `graceful` namespace must be added to an explicit namespace list
+   - 收集和 Eureka、Feign、Hystrix、Kafka、Redis、Stream、RocketMQ、XXL-Job、数据源、Web 相关的依赖。
+2. 启动类
+   - 检查 `@EnableDiscoveryClient`、`@EnableFeignClients`、`@EnableHystrix`、`@EnableApolloConfig`。
+3. 消息代码
+   - 检查 Stream consumer 和 producer
+   - 检查 Kafka listener 和 producer
+   - 检查 RocketMQ listener 和 producer
+4. 调度代码
+   - 统计 `@XxlJob` 处理器数量
+   - 定位 `XxlJobSpringExecutor`
+5. Apollo 配置
+   - 确认显式 namespace 列表中是否需要新增 `graceful`
 
-## graceful.properties Construction
+## graceful.properties 生成规则
 
-Generate `graceful.properties` in this order:
+按以下顺序生成 `graceful.properties`：
 
 ```properties
 graceful.enabled=true
@@ -124,78 +118,57 @@ graceful.plugin.rocket-consumer.enabled=<true|false>
 graceful.plugin.web-server.shutdownWaitTimeSeconds=30
 graceful.plugin.rocket-consumer.shutdownWaitTimeSeconds=30
 graceful.plugin.kafka-consumer.shutdownWaitTimeSeconds=30
-graceful.executor.awaitTerminationSeconds=30
 ```
 
-Apply these construction rules:
+应用以下生成规则：
 
-- `dataSource`, `eureka`, `redis`, `hystrix`, `stream-consumer`, `stream-producer`, `rocket-producer`, `web-server`, `xxl-job`
-  - set to `true` when detected, else `false`
-- `kafka-consumer`, `kafka-producer`, `feign`, `feign.pre-request`
-  - set from scan results, not from a hardcoded conservative default
+- `dataSource`、`eureka`、`redis`、`hystrix`、`stream-consumer`、`stream-producer`、`rocket-producer`、`web-server`、`xxl-job`
+  - 检测到则设为 `true`，否则设为 `false`
+- `kafka-consumer`、`kafka-producer`、`feign`、`feign.pre-request`
+  - 根据扫描结果设置，不要使用硬编码的保守默认值
 - `rocket-consumer`
-  - set to `true` when RocketMQ consumer signals are detected and no unresolved compatibility risk blocks it
-  - if custom wrappers such as `@RocketMQDynamicListener` are present, use the project-specific compatibility conclusion instead of a hardcoded `false`
+  - 检测到 RocketMQ consumer 信号且不存在未解决的兼容性风险时，设为 `true`
+  - 如果存在 `@RocketMQDynamicListener` 这类自定义包装器，应使用该项目确认过的兼容性结论，而不是硬编码 `false`
 
-## Markdown Output Template
+## Markdown 输出模板
 
-Write the scan/configuration document with this structure:
+扫描/配置文档应包含以下结构：
 
-1. Project summary
-   - project name
-   - whether starter dependency is present
-   - whether Apollo already loads the `graceful` namespace
-   - count of XXL-Job handlers
-   - count of custom executor beans
-2. Key dependencies
-   - list only the dependencies relevant to graceful lifecycle
-3. Middleware signals
-   - use a table with: `Area | Detected | Evidence | Recommended`
-4. Apollo check
-   - startup class
-   - detected namespace list
-   - whether the `graceful` namespace is missing
-5. Recommended `graceful.properties`
-   - include a complete properties block
-6. Next actions
-   - list remaining code changes or validation work
-7. Special notes
-   - especially for custom RocketMQ listener wrappers, including whether compatibility has been confirmed in the target project, or risky rollout overrides
+1. 项目摘要
+   - 项目名称
+   - 是否已存在 starter 依赖
+   - Apollo 是否已经加载 `graceful` namespace
+   - XXL-Job 处理器数量
+2. 关键依赖
+   - 只列出与 graceful lifecycle 相关的依赖
+3. 中间件信号
+   - 使用表格：`Area | Detected | Evidence | Recommended`
+4. Apollo 检查
+   - 启动类
+   - 检测到的 namespace 列表
+   - 是否缺少 `graceful` namespace
+5. 推荐的 `graceful.properties`
+   - 给出完整的 properties 配置块
+6. 后续动作
+   - 列出剩余代码改动或验证工作
+7. 特殊说明
+   - 尤其说明自定义 RocketMQ listener 包装器是否已在目标项目确认兼容，以及是否存在带风险的发布覆盖策略
 
-## Code Change Checklist
+## 代码改动清单
 
-- Add `com.yl:jt-platform-graceful-starter:1.0.0-RELEASE` when it is missing.
-- If `@EnableApolloConfig(...)` exists and hardcodes namespaces, add the `graceful` namespace rather than `graceful.properties`.
-- For `ThreadPoolTaskExecutor`, set:
-  - `waitForTasksToCompleteOnShutdown=true`
-  - `awaitTerminationSeconds`, sourced from configuration when the project already externalizes graceful timeout values
-- For raw `ExecutorService`, `ThreadPoolExecutor`, or `ForkJoinPool`:
-  - call `shutdown()`
-  - wait with bounded timeout
-  - log queued tasks if forced to `shutdownNow()`
-- Record the business policy for queued tasks: finish, drop with alert, or persist for replay.
+- 缺失时，补充 `com.yl:jt-platform-graceful-starter:1.0.0-RELEASE`。
+- 如果存在 `@EnableApolloConfig(...)` 且硬编码了 namespace，新增的是 `graceful`，不是 `graceful.properties`。
 
-## Thread Pools
+## 验证要求
 
-- Treat app-defined executors as first-class shutdown resources; the starter cannot infer business semantics for queued work.
-- For `ThreadPoolTaskExecutor`, set `waitForTasksToCompleteOnShutdown=true` and `awaitTerminationSeconds`. If graceful timeout properties already exist or are being introduced, wire the code to those properties instead of hardcoding time values.
-- For raw `ExecutorService`, `ThreadPoolExecutor`, or `ForkJoinPool`, add an explicit shutdown hook that:
-  - calls `shutdown()`
-  - waits for a bounded timeout
-  - logs and escalates queued work if it must call `shutdownNow()`
-- Record the business policy for queued tasks: finish, drop with alert, or persist for replay.
-
-## Validation
-
-- Validate at least these scenarios after the code change:
-  - startup order and successful registration
-  - instance drain / deregistration
-  - in-flight HTTP requests during shutdown
-  - XXL-Job execution while shutting down
-  - Stream consumer stop and producer flush
-  - Kafka consumer stop and producer flush when Kafka is detected
-  - RocketMQ producer flush, and consumer stop only if the listener type is confirmed compatible
-  - Feign request interceptor ordering and client timeout behavior when Feign is detected
-  - custom thread-pool queue behavior
-- If runtime validation cannot be executed locally, leave a concrete test checklist in the repo.
-- When the user explicitly confirms that a custom RocketMQ wrapper is compatible in the current project, treat that as validated project context and reflect it in both the generated markdown document and `graceful.properties`.
+- 代码改动后，至少验证以下场景：
+  - 启动顺序与注册成功
+  - 实例摘流量 / 下线
+  - 关闭过程中的 HTTP 在途请求
+  - 关闭过程中的 XXL-Job 执行
+  - Stream consumer 停止与 producer flush
+  - 检测到 Kafka 时，Kafka consumer 停止与 producer flush
+  - RocketMQ producer flush，以及仅在 listener 类型确认兼容时验证 consumer 停止
+  - 检测到 Feign 时，Feign 请求拦截器顺序与客户端超时行为
+- 如果本地无法执行运行时验证，就在仓库中留下具体的测试清单。
+- 当用户明确确认当前项目里的自定义 RocketMQ 包装器兼容时，应把它视为已验证的项目上下文，并同步反映到生成的 markdown 文档和 `graceful.properties` 中。

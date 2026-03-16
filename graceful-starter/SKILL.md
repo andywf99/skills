@@ -1,11 +1,11 @@
 ---
 name: 优雅启停接入
-description: 该技能用于批量接入优雅启停依赖，从 projects.txt 和 gits.txt 读取项目信息，自动克隆项目、添加 yl-sqs-platform-graceful-starter 依赖并推送变更。
+description: 该技能用于批量接入优雅启停依赖，从 projects.txt 和 gits.txt 读取项目信息，自动克隆项目、添加 yl-sqs-platform-graceful-starter 依赖；如果项目存在自定义线程池，则补充优雅关停改造并推送变更。
 ---
 
 # 优雅启停接入
 
-当用户说 **[优雅启停接入]** 时，按以下任务顺序执行：
+当用户说 **[批量优雅启停接入]** 时，按以下任务顺序执行：
 
 ---
 
@@ -65,7 +65,7 @@ git@github.com:company/project-c.git
 3. 如果已存在，将该项目标记为 **无需变更**
 4. 如果不存在，执行以下修改：
 
-### 4.1 添加 properties
+### 3.1 添加 properties
 
 在 `<properties>` 标签内添加版本号（如无 `<properties>` 标签则创建）：
 
@@ -73,7 +73,7 @@ git@github.com:company/project-c.git
 <yl-sqs-platform-graceful-starter.version>2.0.1.0-RELEASE</yl-sqs-platform-graceful-starter.version>
 ```
 
-### 4.2 添加 dependency
+### 3.2 添加 dependency
 
 在 `<dependencies>` 标签内添加依赖：
 
@@ -106,13 +106,55 @@ git@github.com:company/project-c.git
 
 ---
 
-## 任务 5：推送变更到 Git 仓库
+## 任务 5：检查并改造线程池
+
+**目标**：识别项目中的自定义线程池，并补齐优雅关停策略。
+
+**操作步骤**：
+1. 扫描项目中的线程池实现，重点检查：
+   - `ThreadPoolTaskExecutor` bean
+   - `ExecutorService`、`ThreadPoolExecutor`、`ForkJoinPool`
+   - 自定义 executor bean 或线程池封装类
+2. 如果项目不存在自定义线程池，标记为 **无需线程池变更**
+3. 如果存在 `ThreadPoolTaskExecutor`，补齐以下设置：
+   - `waitForTasksToCompleteOnShutdown=true`
+   - `awaitTerminationSeconds`
+   - 如果项目已经把 graceful 超时时间外置配置化，优先复用现有配置，不要硬编码新的时间值
+   - 如果项目通过 `graceful.properties` 或 Apollo 管理优雅关停超时，优先对齐 `graceful.executor.awaitTerminationSeconds`
+4. 如果存在原生 `ExecutorService`、`ThreadPoolExecutor` 或 `ForkJoinPool`，补齐显式关闭逻辑：
+   - 调用 `shutdown()`
+   - 在有界超时时间内等待
+   - 如果必须 `shutdownNow()`，记录排队任务日志并上报风险
+5. 明确记录排队任务的业务策略：执行完成、告警后丢弃，或持久化后重放
+
+**验证**：
+1. 确认线程池改造不会破坏原有 bean 初始化与销毁流程
+2. 确认在应用关闭时，线程池会等待在途任务或按既定策略处理队列任务
+
+---
+
+## 任务 6：验证依赖和线程池改造
+
+**目标**：确认所有修改项目的依赖与线程池改造都已正确落地。
+
+**操作步骤**：
+1. 对每个有变更的项目，重新读取 `pom.xml` 与相关线程池代码文件
+2. 验证 `properties` 中包含 `yl-sqs-platform-graceful-starter.version`
+3. 验证 `dependencies` 中包含 `yl-sqs-platform-graceful-starter` 依赖
+4. 如果修改了 `ThreadPoolTaskExecutor`，验证已设置 `waitForTasksToCompleteOnShutdown=true` 和 `awaitTerminationSeconds` awaitTerminationSeconds支持apollo配置，默认10s
+5. 如果修改了原生线程池，验证存在显式关闭逻辑与超时等待
+6. 如果项目使用 `graceful.properties` 或 Apollo，验证 `graceful.executor.awaitTerminationSeconds` 与线程池等待时间一致
+7. 如验证失败，重新检查并修复
+
+---
+
+## 任务 7：推送变更到 Git 仓库
 
 **目标**：将所有变更提交并推送到远程仓库。
 
 **操作步骤**：
 对每个有变更的项目执行：
-1. `git add pom.xml`
+1. `git add pom.xml <modified_files>`
 2. `git commit -m "feat: 优雅启停接入"`
 3. `git push origin feature/优雅上下线`
 
@@ -122,7 +164,7 @@ git@github.com:company/project-c.git
 
 ---
 
-## 任务 6：合并到 UAT 分支
+## 任务 8：合并到 UAT 分支
 
 **目标**：将 `feature/优雅上下线` 分支合并到 `uat` 分支。
 
@@ -137,6 +179,7 @@ git@github.com:company/project-c.git
 1. 如果合并时出现冲突，尝试自动修复：
    - 读取冲突文件，分析冲突内容
    - 对于 `pom.xml` 冲突，保留双方改动（保留原有依赖 + 新增的优雅启停依赖）
+   - 对于线程池相关 Java / 配置文件冲突，优先保留已有业务语义，同时保留优雅关停逻辑
    - 使用 `git add <file>` 标记冲突已解决
    - 执行 `git commit` 完成合并
 2. 如果冲突无法自动修复：
@@ -157,20 +200,20 @@ git@github.com:company/project-c.git
 
 ### 变更成功的项目列表
 
-| 项目名称 | Git 地址 | 状态 |
-|---------|---------|------|
-| project-a | git@xxx | ✅ 已推送至 feature 和 uat 分支 |
-| project-b | git@xxx | ✅ 已推送至 feature 和 uat 分支 |
+| 项目名称 | Git 地址 | 变更内容 | 状态 |
+|---------|---------|---------|------|
+| project-a | git@xxx | 依赖接入 + 线程池改造 | ✅ 已推送至 feature 和 uat 分支 |
+| project-b | git@xxx | 仅依赖接入 | ✅ 已推送至 feature 和 uat 分支 |
 
 ### 无需变更的项目列表
 
 | 项目名称 | Git 地址 | 原因 |
 |---------|---------|------|
-| project-c | git@xxx | 依赖已存在 |
+| project-c | git@xxx | 依赖已存在且无需线程池变更 |
 
 ### 失败项目列表（如有）
 
 | 项目名称 | Git 地址 | 失败原因 |
 |---------|---------|---------|
 | project-d | git@xxx | 克隆失败 |
-| project-e | git@xxx | 合并冲突无法自动解决：pom.xml properties 冲突 |
+| project-e | git@xxx | 合并冲突无法自动解决：线程池关闭逻辑与现有实现冲突 |
