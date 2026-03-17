@@ -1,81 +1,70 @@
 ---
-name: 优雅启停接入
-description: 该技能用于批量接入优雅启停依赖，从 projects.txt 和 gits.txt 读取项目信息，自动克隆项目、添加 yl-sqs-platform-graceful-starter 依赖；如果项目存在自定义线程池，则补充优雅关停改造并推送变更。
+name: 优雅启停批量作业
+description: 用于批量接入 yl-sqs-platform-graceful-starter、改造线程池优雅关停、批量提交推送、合并到 uat、处理 pom 与优雅关停相关冲突，并生成 MR 链接与执行报告。适用于多仓库 Java/Spring Boot 项目的批量优雅启停接入和发布。
 ---
 
-# 优雅启停接入
+# 优雅启停批量作业
 
-当用户说 **[批量优雅启停接入]** 时，按以下任务顺序执行：
+当用户要求批量接入优雅启停、重建 `feature/优雅上下线`、批量提交推送、合并 `uat`、生成 MR 链接、排查线程池优雅关停问题时，使用本技能。
 
----
+优先复用 `scripts/` 下的批量脚本，不要重复手写同类 PowerShell 逻辑。
 
-## 任务 1：读取项目配置
+## 适用范围
 
-**目标**：获取需要修改的项目列表和对应的 Git 地址。
+- 多仓库批量接入 `yl-sqs-platform-graceful-starter`
+- 批量改造 `ThreadPoolTaskExecutor`、`ExecutorService`、`ThreadPoolExecutor`、`ForkJoinPool`
+- 批量提交并推送 `feature/优雅上下线`
+- 批量合并到 `uat`
+- 生成 `feature/优雅上下线 -> master` 的 MR 链接表，输出MR Markdown 文档
 
-**操作步骤**：
-1. 读取当前工作目录下的 `projects.txt` 文件，获取项目名称列表
-2. 读取当前工作目录下的 `gits.txt` 文件，获取项目对应的 Git clone 地址
-3. 解析两个文件，建立项目名称与 Git 地址的映射关系
+## 输入约定
 
-**文件格式示例**：
+默认从当前技能目录读取：
 
-`projects.txt`:
-```
-project-a
-project-b
-project-c
-```
+- `gits.txt`
+- `projects.txt`，可选
+- `projects/`
 
-`gits.txt`:
-```
-git@github.com:company/project-a.git
-git@github.com:company/project-b.git
-git@github.com:company/project-c.git
-```
+如果仓库已存在于 `projects/`，优先复用本地仓库；不要重复克隆。
 
-**验证**：确认所有项目都有对应的 Git 地址。
+## 执行前检查
 
----
+- 操作人需要具备全部目标仓库的 Git 拉取、推送、建分支、删分支权限
+- `gits.txt` 是必需输入
+- `projects.txt` 不是必需输入；如果存在，则作为目标仓库过滤清单使用
+- 本地批量操作前，目标仓库工作区必须干净
+- 如果要合并到 `uat`，本地 `uat` 只能基于 `origin/uat` 开始，不要在分叉的本地 `uat` 上继续操作
 
-## 任务 2：克隆项目并切换分支
+## 可直接复用的脚本
 
-**目标**：将所有项目克隆到本地并切换到指定分支。
+- [scripts/batch_graceful_starter.ps1](scripts/batch_graceful_starter.ps1)
+  - 用途：批量克隆、抓取最新远端、切换或重建 `feature/优雅上下线`
+  - 典型场景：首次准备仓库、批量恢复 feature 分支、批量重建 feature 分支
+  - 输入规则：默认读取 `gits.txt` 全量仓库；如果提供 `projects.txt`，则只处理其中列出的项目
+- [scripts/build_uat_mr_links.ps1](scripts/build_uat_mr_links.ps1)
+  - 用途：根据 `projects.txt` 和 `gits.txt` 生成 MR Markdown 表格
+  - 典型场景：批量生成 `feature/优雅上下线 -> master` 的 MR 链接；如果用户主动要求，再生成 `feature/优雅上下线 -> uat` 的 MR 链接
+  - 输入规则：默认读取 `gits.txt` 全量仓库；如果提供 `projects.txt`，则只输出其中列出的项目
 
-**操作步骤**：
-1. 在当前工作目录下创建 `projects` 目录用于存放克隆的项目
-2. 遍历项目列表，对每个项目执行：
-   - 检查项目目录是否已存在
-   - 如不存在，执行 `git clone <git_url>` 克隆项目
-   - 切换到 `feature/优雅上下线` 分支
-     - 如果分支不存在，创建并切换：`git checkout -b feature/优雅上下线`
-     - 如果分支已存在，直接切换：`git checkout feature/优雅上下线`
+## 执行原则
 
-**验证**：确认所有项目已成功克隆并处于 `feature/优雅上下线` 分支。
+### 1. 分支原则
 
----
+- 功能分支固定为 `feature/优雅上下线`
+- 除非用户明确要求，否则不要把 `uat` 快进或 merge 到 `feature/优雅上下线`
+- Windows 下涉及中文分支名时，推送优先用 `git push -u origin HEAD`
+- 需要合并到 `uat` 时，优先在干净工作区上把本地 `uat` 对齐到 `origin/uat`
+- 如果只是为了生成 MR 或继续改 feature，不要先同步 `uat -> feature`
 
-## 任务 3：检查并添加依赖
+### 2. 依赖接入原则
 
-**目标**：检查项目是否已有优雅启停依赖，如无则添加。
-
-**操作步骤**：
-1. 找到项目的 Maven parent `pom.xml` 文件（通常位于项目根目录）
-2. 检查是否已存在 `yl-sqs-platform-graceful-starter` 依赖
-3. 如果已存在，将该项目标记为 **无需变更**
-4. 如果不存在，执行以下修改：
-
-### 3.1 添加 properties
-
-在 `<properties>` 标签内添加版本号（如无 `<properties>` 标签则创建）：
+根 `pom.xml` 需要确保存在：
 
 ```xml
 <yl-sqs-platform-graceful-starter.version>2.0.1.0-RELEASE</yl-sqs-platform-graceful-starter.version>
 ```
 
-### 3.2 添加 dependency
-
-在 `<dependencies>` 标签内添加依赖：
+以及：
 
 ```xml
 <dependency>
@@ -85,135 +74,206 @@ git@github.com:company/project-c.git
 </dependency>
 ```
 
-**注意事项**：
-- 如果是在 `dependencyManagement` 中添加，确保添加到正确的位置
-- 保持 XML 格式缩进一致
-- 不要破坏原有的 XML 结构
+如果已存在，只保留一份，不要重复插入。
 
-**验证**：使用 `mvn dependency:tree` 或检查 pom.xml 确认依赖已正确添加。
+### 3. 线程池改造原则
 
----
+#### `ThreadPoolTaskExecutor`
 
-## 任务 4：验证依赖添加
+统一补齐：
 
-**目标**：确认所有修改项目的依赖已正确添加。
+- `setWaitForTasksToCompleteOnShutdown(true)`
+- `setAwaitTerminationSeconds(...)`
 
-**操作步骤**：
-1. 对每个有变更的项目，重新读取 `pom.xml` 文件
-2. 验证 `properties` 中包含 `yl-sqs-platform-graceful-starter.version`
-3. 验证 `dependencies` 中包含 `yl-sqs-platform-graceful-starter` 依赖
-4. 如验证失败，重新检查并修复
+默认规则：
 
----
+- 普通 Spring Bean：使用 Apollo 配置
+- 配置项：`graceful.executor.awaitTerminationSeconds`
+- 默认值：`10`
+- 如果某个线程池类最终没有使用 `graceful.executor.awaitTerminationSeconds`，则不要为了统一形式强行增加该配置或 `@Value` 字段
 
-## 任务 5：检查并改造线程池
+示例：
 
-**目标**：识别项目中的自定义线程池，并补齐优雅关停策略。
+```java
+@Value("${graceful.executor.awaitTerminationSeconds:10}")
+private Integer awaitSeconds;
+```
 
-**操作步骤**：
-1. 扫描项目中的线程池实现，重点检查：
-   - `ThreadPoolTaskExecutor` bean
-   - `ExecutorService`、`ThreadPoolExecutor`、`ForkJoinPool`
-   - 自定义 executor bean 或线程池封装类
-2. 如果项目不存在自定义线程池，标记为 **无需线程池变更**
-3. 如果存在 `ThreadPoolTaskExecutor`，补齐以下设置：
-   - `waitForTasksToCompleteOnShutdown=true`
-   - `awaitTerminationSeconds`
-   - 如果项目已经把 graceful 超时时间外置配置化，优先复用现有配置，不要硬编码新的时间值
-   - 如果项目通过 `graceful.properties` 或 Apollo 管理优雅关停超时，优先对齐 `graceful.executor.awaitTerminationSeconds`
-4. 如果存在原生 `ExecutorService`、`ThreadPoolExecutor` 或 `ForkJoinPool`，补齐显式关闭逻辑：
-   - 调用 `shutdown()`
-   - 在有界超时时间内等待
-   - 如果必须 `shutdownNow()`，记录排队任务日志并上报风险
-5. 明确记录排队任务的业务策略：执行完成、告警后丢弃，或持久化后重放
+```java
+executor.setAwaitTerminationSeconds(awaitSeconds);
+```
 
-**验证**：
-1. 确认线程池改造不会破坏原有 bean 初始化与销毁流程
-2. 确认在应用关闭时，线程池会等待在途任务或按既定策略处理队列任务
+#### `final` / `static final` 线程池
 
----
+如果线程池是 `final` 或 `static final` 持有，默认直接写死 `10s`，不要强行改成 Apollo 注入。
 
-## 任务 6：验证依赖和线程池改造
+#### 原生线程池 Bean
 
-**目标**：确认所有修改项目的依赖与线程池改造都已正确落地。
+如果是 Spring 管理的：
 
-**操作步骤**：
-1. 对每个有变更的项目，重新读取 `pom.xml` 与相关线程池代码文件
-2. 验证 `properties` 中包含 `yl-sqs-platform-graceful-starter.version`
-3. 验证 `dependencies` 中包含 `yl-sqs-platform-graceful-starter` 依赖
-4. 如果修改了 `ThreadPoolTaskExecutor`，验证已设置 `waitForTasksToCompleteOnShutdown=true` 和 `awaitTerminationSeconds` awaitTerminationSeconds支持apollo配置，默认10s
-5. 如果修改了原生线程池，验证存在显式关闭逻辑与超时等待
-6. 如果项目使用 `graceful.properties` 或 Apollo，验证 `graceful.executor.awaitTerminationSeconds` 与线程池等待时间一致
-7. 如验证失败，重新检查并修复
+- `ExecutorService`
+- `ThreadPoolExecutor`
+- `ForkJoinPool`
 
----
+要补显式关闭逻辑：
 
-## 任务 7：推送变更到 Git 仓库
+- `shutdown()`
+- `awaitTermination(...)`
+- 必要时 `shutdownNow()`
 
-**目标**：将所有变更提交并推送到远程仓库。
+如果是 Bean 冲突，优先保留已有业务语义，再补优雅关停。
 
-**操作步骤**：
-对每个有变更的项目执行：
-1. `git add pom.xml <modified_files>`
+#### 业务代码临时线程池
+
+如果生命周期清晰且由当前类创建：
+
+- 在使用完后显式 `shutdown()`
+- 继续 `awaitTermination(...)`
+
+如果线程池是长生命周期字段：
+
+- 优先在 Spring Bean 中通过 `@PreDestroy` 收口
+
+### 4. 校验原则
+
+提交前至少做这些检查：
+
+- `git diff --check`
+- 检查是否仍存在硬编码 `setAwaitTerminationSeconds(10)`
+- 允许保留硬编码 `10` 的场景：`final/static final` 线程池
+- 检查是否有重复插入的 `awaitSeconds` 字段或重复 shutdown 配置
+- 检查 `pom.xml` 中 starter version 和 dependency 是否重复
+- 检查 `@Value("${graceful.executor.awaitTerminationSeconds:10}")` 是否误加到 `final/static final` 线程池场景
+- 检查未使用 `graceful.executor.awaitTerminationSeconds` 的线程池类中，是否被错误引入了 `@Value` 字段或相关配置代码
+
+## 批量工作流
+
+### 步骤 1：准备仓库
+
+1. 读取 `projects.txt` 和 `gits.txt`
+2. 如果存在 `projects.txt`，用它过滤 `gits.txt` 中的目标项目；如果不存在，则直接按 `gits.txt` 全量处理
+3. 优先执行 `scripts/batch_graceful_starter.ps1`
+4. 本地不存在则克隆
+5. 需要重建 feature 时：
+   - 删除本地 `feature/优雅上下线`
+   - 删除远端 `feature/优雅上下线`
+   - 基于远程 `master` 重新创建该分支
+
+### 步骤 2：批量改代码
+
+1. 根 `pom.xml` 接入 graceful starter
+2. 扫描 `ThreadPoolTaskExecutor`
+3. 扫描原生线程池 Bean
+4. 扫描业务代码里直接创建的线程池
+5. 按规则补齐优雅关停
+
+### 步骤 3：批量提交推送
+
+对有改动的仓库：
+
+1. `git add -A`
 2. `git commit -m "feat: 优雅启停接入"`
-3. `git push origin feature/优雅上下线`
+3. `git push -u origin HEAD`
 
-**错误处理**：
-- 如果 push 失败，先执行 `git pull --rebase origin feature/优雅上下线` 解决冲突
-- 解决冲突后重新提交
+### 步骤 4：合并到 `uat`（非必须，推荐需用户确认，提示可能冲突需要手动操作）
 
----
+在干净工作区执行：
 
-## 任务 8：合并到 UAT 分支
+1. `git checkout -B uat origin/uat`
+2. 合并 `feature/优雅上下线`
+3. 如仅 `pom.xml` 冲突，按下述规则自动解决
+4. 如 Java 冲突仅是优雅关停相关改动，直接采用 `feature/优雅上下线` 版本
+5. 如果仍有非优雅冲突，立即 `git merge --abort`
+6. 输出 MR 链接给用户人工处理
 
-**目标**：将 `feature/优雅上下线` 分支合并到 `uat` 分支。
+### 步骤 5：输出结果
 
-**操作步骤**：
-对每个有变更的项目执行：
-1. 切换到 `uat` 分支：`git checkout uat`
-2. 拉取最新代码：`git pull origin uat`
-3. 合并 `feature/优雅上下线` 分支：`git merge feature/优雅上下线`
-4. 推送到远程：`git push origin uat`
+结果需要分三类输出：
 
-**冲突处理**：
-1. 如果合并时出现冲突，尝试自动修复：
-   - 读取冲突文件，分析冲突内容
-   - 对于 `pom.xml` 冲突，保留双方改动（保留原有依赖 + 新增的优雅启停依赖）
-   - 对于线程池相关 Java / 配置文件冲突，优先保留已有业务语义，同时保留优雅关停逻辑
-   - 使用 `git add <file>` 标记冲突已解决
-   - 执行 `git commit` 完成合并
-2. 如果冲突无法自动修复：
-   - 执行 `git merge --abort` 取消合并
-   - 将该项目记录到失败列表，标注"合并冲突无法自动解决"
-   - 继续处理下一个项目
+- 已完成的仓库
+- 无需变更的仓库
+- 失败仓库
 
-**注意事项**：
-- 冲突修复时优先保留 pom.xml 中的 properties 和 dependencies
-- 确保 XML 格式正确，标签闭合完整
-- 合并成功后验证 pom.xml 结构完整性
+如果用户要求，还要额外输出：
 
----
+- `feature/优雅上下线 -> uat` 的 MR 链接表
+- 剩余冲突文件列表
 
-## 执行总结
+生成 MR 表时，优先执行 `scripts/build_uat_mr_links.ps1`。
 
-所有任务完成后，输出以下报告：
+注意：
 
-### 变更成功的项目列表
+- `feature/优雅上下线 -> master` 的 MR 文档是默认收尾产物
+- `feature/优雅上下线 -> uat` 的 MR 文档不是默认产物，只作为推荐项，在用户主动要求时才生成
 
-| 项目名称 | Git 地址 | 变更内容 | 状态 |
-|---------|---------|---------|------|
-| project-a | git@xxx | 依赖接入 + 线程池改造 | ✅ 已推送至 feature 和 uat 分支 |
-| project-b | git@xxx | 仅依赖接入 | ✅ 已推送至 feature 和 uat 分支 |
+### 步骤 6：默认收尾输出
 
-### 无需变更的项目列表
+当代码改动、提交、推送全部完成后，默认额外输出一份：
 
-| 项目名称 | Git 地址 | 原因 |
-|---------|---------|------|
-| project-c | git@xxx | 依赖已存在且无需线程池变更 |
+- `feature/优雅上下线 -> master` 的 MR 链接 Markdown 文档
 
-### 失败项目列表（如有）
+推荐直接执行：
 
-| 项目名称 | Git 地址 | 失败原因 |
-|---------|---------|---------|
-| project-d | git@xxx | 克隆失败 |
-| project-e | git@xxx | 合并冲突无法自动解决：线程池关闭逻辑与现有实现冲突 |
+```powershell
+.\scripts\build_uat_mr_links.ps1 -TargetBranch master -OutputFile .\master_mr_links.md
+```
+
+如果用户主动要求 `uat` 的 MR 文档，则再额外生成：
+
+```powershell
+.\scripts\build_uat_mr_links.ps1 -TargetBranch uat -OutputFile .\uat_mr_links.md
+```
+
+## 合并到UAT冲突处理规则
+
+### `pom.xml`
+
+`pom.xml` 冲突统一按以下规则：
+
+1. 以 `uat` 当前 `pom` 为基准
+2. 保留 `uat` 上已有的非优雅上下线改动
+3. 确保 graceful starter 的版本属性存在
+4. 确保 graceful starter 依赖存在
+5. 如果 `uat` 已经存在 graceful starter，只保留一份
+
+### Java 冲突
+
+如果冲突块只涉及这些内容，可以直接采用 feature 版本：
+
+- `awaitSeconds`
+- `graceful.executor.awaitTerminationSeconds`
+- `setWaitForTasksToCompleteOnShutdown`
+- `setAwaitTerminationSeconds`
+- `@PreDestroy`
+- `shutdown/awaitTermination/shutdownNow`
+- 原生线程池 Bean 的优雅关停包装
+
+如果冲突块包含业务字段、业务方法、业务分支逻辑，则不要自动覆盖，保留给人工处理。
+
+## 关键禁忌
+
+- 不要未经用户确认把 `uat` 合回 `feature/优雅上下线`
+- 不要因为 Windows 编码问题直接把中文分支名写进 `push` refspec
+- 不要在有未提交改动时重置分支
+- 不要对无法确认是“纯优雅关停冲突”的 Java 文件直接覆盖
+- 不要在 merge 失败后把带冲突的工作区遗留给下一仓库，必须先 `git merge --abort`
+
+## 已验证踩坑
+
+- `git push origin feature/优雅上下线` 在 Windows 下可能遇到中文 refspec 编码问题，统一改用 `git push -u origin HEAD`
+- 把 `uat` 快进到 `feature/优雅上下线` 会污染 feature 历史，后续 MR 难审，默认禁止
+- `pom.xml` 冲突不能简单整文件取一边，必须保留 `uat` 上非优雅改动，同时确保 graceful starter 只保留一份
+- 不是所有 Java 冲突都能自动取 feature；只有冲突块纯粹围绕优雅关停时才能自动覆盖
+- `Application.java`、监听器、业务方法体、业务字段冲突默认视为人工处理范围
+- 仅靠 `gits.txt` 就能推导项目名，因此 `projects.txt` 不应再被设计成强依赖
+
+## 交付物
+
+按用户要求可以产出：
+
+- 执行总结
+- 冲突仓库清单
+- MR Markdown 表格
+- 操作文档
+- 默认生成的 `feature/优雅上下线 -> master` MR Markdown 文档
+- 只有用户主动要求时才生成的 `feature/优雅上下线 -> uat` MR Markdown 文档
