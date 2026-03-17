@@ -67,8 +67,47 @@ spring:
 
 ```
 工具名称: mcp__sqs-mcp-server-api__ArcherySQL-QueryRabbitExchangeReference
-参数: exchanges = {destination-name}
+参数:
+  - project: {项目名称}           # 必填，当前所属项目名称
+  - exchanges: {destination-name} # 必填，交换机名称，多个用英文逗号分隔
 ```
+
+**调用示例：**
+```
+mcp__sqs-mcp-server-api__ArcherySQL-QueryRabbitExchangeReference(
+  project: "yl-jms-css-api",
+  exchanges: "limit-employee-log"
+)
+```
+
+**返回结果格式：**
+```json
+[
+  {
+    "project": "yl-jms-css-api",
+    "exchange": "limit-employee-log",
+    "referenceProjects": [
+      "yl-web-servicequality",
+      "yl-jms-ops-write-api",
+      "yl-jms-sts-api",
+      "yl-web-sqs-workorder",
+      "yl-jms-wd-sqs-workorder-web",
+      "yl-jms-wd-sqs-servicequality-web",
+      "yl-jms-sqs-leave-message-api",
+      "yl-jms-sqs-cswot-manage-web"
+    ]
+  }
+]
+```
+
+**返回字段说明：**
+| 字段 | 说明 |
+|------|------|
+| project | 查询的项目名称 |
+| exchange | 交换机名称（destination） |
+| referenceProjects | 引用该交换机的项目列表（数组） |
+
+从返回结果中提取 `referenceProjects` 数组，用逗号拼接后填入 CSV 的 `reference project` 列。
 
 ### 步骤五：生成 CSV 报告
 
@@ -87,8 +126,8 @@ spring:
 **CSV 格式示例：**
 ```csv
 input/output,类型,destination,project,reference project
-session-create-close-evaluation-result-input,消费者,session-create-close-evaluation-result,yl-jms-css-approval-api,"project_1,project_2"
-approval-handle-result-output,生产者,approval-handle-result,yl-jms-css-approval-api,"project_1"
+limit-employee-log-output,生产者,limit-employee-log,yl-jms-css-api,"yl-web-servicequality,yl-jms-ops-write-api,yl-jms-sts-api,yl-web-sqs-workorder,yl-jms-wd-sqs-workorder-web,yl-jms-wd-sqs-servicequality-web,yl-jms-sqs-leave-message-api,yl-jms-sqs-cswot-manage-web"
+approval-handle-result-output,生产者,approval-handle-result,yl-jms-css-approval-api,"project_1,project_2"
 ```
 
 ---
@@ -101,7 +140,8 @@ approval-handle-result-output,生产者,approval-handle-result,yl-jms-css-approv
    - 有些 binding 可能没有显式指定 `binder`，需要检查 `default-binder` 配置
 
 2. **MCP 调用注意事项：**
-   - 可以批量查询多个 destination（用逗号分隔）
+   - 必须传入 `project` 参数（当前所属项目名称）
+   - `exchanges` 参数可以传入多个 destination（用英文逗号分隔）
    - 如果查询结果为空，reference project 列填写 "无"
 
 3. **输出格式注意事项：**
