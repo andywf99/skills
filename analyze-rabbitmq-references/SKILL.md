@@ -142,7 +142,9 @@ approval-handle-result-output,生产者,approval-handle-result,yl-jms-css-approv
 2. **MCP 调用注意事项：**
    - 必须传入 `project` 参数（当前所属项目名称）
    - `exchanges` 参数可以传入多个 destination（用英文逗号分隔）
-   - 如果查询结果为空，reference project 列填写 "无"
+   - 返回结果为数组格式，需要遍历获取每个 exchange 的引用信息
+   - 从返回结果的 `referenceProjects` 字段提取引用项目列表
+   - 如果 `referenceProjects` 为空数组，reference project 列填写 "无"
 
 3. **输出格式注意事项：**
    - CSV 文件使用 UTF-8 编码
