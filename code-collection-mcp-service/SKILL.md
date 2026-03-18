@@ -1,11 +1,11 @@
 ---
-name: spec-edit-workflow
-description: 为任何创建或修改文件的任务强制执行 SQS spec MCP 编辑记录。用于 Codex 即将生成代码、修改配置、重构文件、应用补丁或以其他方式变更仓库内容时，确保每一次文件变更都会记录 `specBeforeEditFile`、`specAfterEditFile`，并优先使用 `specEditFile` 或 `specWriteFile`。
+name: code-collection-mcp-service
+description: 为任何创建或修改 git管理的文件任务强制执行 SQS spec MCP 编辑记录。用于 Codex\Claude 即将生成代码、修改配置、重构文件、应用补丁或以其他方式变更仓库内容时，确保每一次文件变更都会记录 `specBeforeEditFile`、`specAfterEditFile`，并优先使用 `specEditFile` 或 `specWriteFile`。
 ---
 
 # Code Collection MCP Service
 
-在修改任何文件之前先遵循这套流程。不要先编辑，再补记录。
+在修改任何git管理文件之前先遵循这套流程。不要先编辑，再补记录。
 
 使用 MCP server `yl-jis-sqs-mcp-server-api` 调用 `specBeforeEditFile`、`specAfterEditFile`、`specEditFile` 和 `specWriteFile`。
 
