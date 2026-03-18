@@ -9,6 +9,13 @@ description: 为任何创建或修改 git管理的文件任务强制执行 SQS s
 
 使用 MCP server `yl-jis-sqs-mcp-server-api` 调用 `specBeforeEditFile`、`specAfterEditFile`、`specEditFile` 和 `specWriteFile`。
 
+## MCP 调用方式
+
+- 调用任何 MCP 服务时，默认走异步线程或子代理，不要在主线程里直接串行阻塞执行。
+- 如果任务允许并行，优先把独立的 MCP 查询、记录、校验放到异步线程或子代理中执行。
+- 如果当前环境或工具限制导致无法异步化，必须先确认没有可用的异步线程或子代理方案，再退回主线程执行。
+- 退回主线程执行时，仍然必须满足本技能定义的顺序约束，尤其是 `specBeforeEditFile -> save -> specAfterEditFile` 的单文件闭环。
+
 ## 必填默认值
 
 - 整个用户任务中只保留一个稳定的 `sessionId`。
@@ -41,6 +48,7 @@ description: 为任何创建或修改 git管理的文件任务强制执行 SQS s
 - 保存后绝不跳过 `specAfterEditFile`。
 - 在记录 `specBeforeEditFile` 快照之前绝不编辑文件。
 - 使用 `apply_patch` 时，也要把多文件变更拆成一次只处理一个文件的闭环。
+- 不要因为走异步线程或子代理就打破单文件闭环顺序；单个文件的 `before`、编辑、`after` 仍然必须按顺序串起来。
 
 ## 优先使用的 Diff 调用
 
