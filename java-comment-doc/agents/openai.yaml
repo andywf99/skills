@@ -1,0 +1,3 @@
+interface:
+  display_name: "Java 注释助手"
+  short_description: "为 Java 类、方法和关键逻辑补充高质量注释与 JavaDoc"
