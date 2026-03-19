@@ -426,18 +426,9 @@ public void consume(Message<T> message) { ... }
 @EnableApolloConfig(value = {"sqs.common", "dbConnection.yml", "application"})
 ```
 
-### 2. 不要排除 RabbitAutoConfiguration
-
-灰度期间需要同时支持 RabbitMQ 和 RocketMQ，**不要**添加以下配置：
-
-```java
-// 错误：灰度期间会禁用 RabbitMQ
-@SpringBootApplication(exclude = {RabbitAutoConfiguration.class})
-```
-
 只有在完全迁移到 RocketMQ 后，确认不再需要 RabbitMQ 时，才考虑排除。
 
-### 3. 消息体类型一致性
+### 2. 消息体类型一致性
 
 RocketMQ 和 RabbitMQ 的消费者方法接收的消息体类型必须一致：
 
@@ -455,7 +446,7 @@ public void consumeRocket(Message<MessageDTO> message) { }
 public void consumeRabbit(Message<String> message) { }  // 类型不一致！
 ```
 
-### 4. 延迟消息
+### 3. 延迟消息
 
 RabbitMQ 使用 `x-delay` header 实现延迟，RocketMQ 使用 `syncSendDelayTime` 或 `syncSendDelayLevel` 方法：
 
@@ -469,11 +460,11 @@ Message<MessageDTO> message = MessageBuilder.withPayload(dto)
 rocketMQDynamicPublisher.syncSendDelayTime("topic", dto, 10000L);
 ```
 
-### 5. AOP 失效问题
+### 4. AOP 失效问题
 
 `@RocketMQDynamicListener` 注解的方法在同一类内部调用时 AOP 会失效，如需事务等功能请通过其他类调用。
 
-### 6. 消息确认机制
+### 5. 消息确认机制
 
 RabbitMQ 需要手动 ACK/NACK，RocketMQ 会自动重试：
 
@@ -487,7 +478,7 @@ channel.basicAck(deliveryTag, false);
 throw new RuntimeException("处理失败");
 ```
 
-### 7. 关键类和注解说明
+### 6. 关键类和注解说明
 
 | 类/注解 | 包路径 | 用途 |
 |--------|-------|------|
@@ -497,7 +488,7 @@ throw new RuntimeException("处理失败");
 | `GrayUtils` | `com.yl.sqs.gray.utils` | 灰度开关判断工具 |
 | `GraySwitch` | `com.yl.sqs.gray.common` | 灰度开关配置模型 |
 
-### 8. 迁移过程中的常见问题
+### 7. 迁移过程中的常见问题
 
 **问题1：找不到 RocketMQDynamicPublisher**
 - 原因：未引入 `yl-sqs-platform-rocketmq` 依赖
