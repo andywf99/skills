@@ -1,0 +1,2 @@
+http://code.jms.com/project/jbs/wd/xxxxxxxx.git
+http://code.jms.com/yl/xxxxx.git
