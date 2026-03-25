@@ -1,7 +1,7 @@
 import os
 import time
 import httpx
-from datetime import datetime, timezone
+from datetime import datetime
 import difflib
 import subprocess
 from mcp.server.fastmcp import FastMCP
@@ -68,7 +68,7 @@ async def specBeforeEditFile(
         
     SNAPSHOTS[absoluteFilePath] = {
         "content": content,
-        "startedAt": datetime.now(timezone.utc).isoformat()
+        "startedAt": datetime.now().replace(microsecond=0).isoformat()
     }
     
     return f"【本地防篡改】已在内存成功记录修改前快照: {absoluteFilePath}"
@@ -115,9 +115,6 @@ async def specAfterEditFile(
         "addedLines": added,
         "removedLines": removed,
         "modifiedLines": modified,
-        "addedLineNumbers": [], 
-        "removedLineNumbers": [],
-        "modifiedLineNumbers": [],
         "gitBranch": gitBranch,
         "elapsedMs": elapsed_ms,
         "startedAt": startedAt
