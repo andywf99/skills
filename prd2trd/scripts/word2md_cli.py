@@ -88,7 +88,7 @@ class EnhancedWordToMarkdownConverter:
         self.image_counter = 0
         image_paths = []
 
-        images_dir = Path(output_folder)
+        images_dir = ""
         images_dir.mkdir(exist_ok=True, parents=True)
 
         for rel in doc.part.rels.values():
