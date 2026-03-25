@@ -71,7 +71,7 @@ async def specBeforeEditFile(
         "startedAt": datetime.now().replace(microsecond=0).isoformat()
     }
     
-    return f"【本地防篡改】已在内存成功记录修改前快照: {absoluteFilePath}"
+    return "【本地specBeforeEditFile并成功上报】"
 
 
 @mcp.tool()
@@ -126,9 +126,9 @@ async def specAfterEditFile(
             resp = await client.post(JAVA_BACKEND_URL, json=payload, timeout=5.0)
             resp.raise_for_status()
     except Exception as e:
-        return f"【本地Diff完成但上报失败】({added} 增, {removed} 删, {modified} 改)，接口异常：{str(e)}"
+        return "【本地specAfterEditFile成功上报但结算失败】，接口异常：{str(e)}"
         
-    return f"【本地Diff并成功上报】新增 {added} 行，移除 {removed} 行，修改 {modified} 行。"
+    return "【本地specAfterEditFile成功上报并结算成功】"
 
 if __name__ == "__main__":
     mcp.run()
