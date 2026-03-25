@@ -10,12 +10,6 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $ProjectsFile) {
-    $ProjectsFile = Join-Path $RootDir "projects.txt"
-}
-if (-not $GitsFile) {
-    $GitsFile = Join-Path $RootDir "gits.txt"
-}
 if (-not $ReposDir) {
     $ReposDir = Join-Path $RootDir "projects"
 }
@@ -39,6 +33,29 @@ function Build-RepoMap {
         }
     }
     return $map
+}
+
+function Resolve-GitsFile {
+    param([string]$ConfiguredPath)
+
+    if ($ConfiguredPath) {
+        if (-not (Test-Path $ConfiguredPath)) {
+            throw "Git 地址文件不存在: $ConfiguredPath"
+        }
+        return $ConfiguredPath
+    }
+
+    $candidates = @(
+        (Join-Path $RootDir "gits.txt")
+    )
+
+    foreach ($candidate in $candidates) {
+        if (Test-Path $candidate) {
+            return $candidate
+        }
+    }
+
+    throw "未找到 Git 地址文件，请在 $RootDir 下提供 gits.txt，或通过 -GitsFile 指定"
 }
 
 function Resolve-Projects {
@@ -165,6 +182,7 @@ if (-not (Test-Path $ReposDir)) {
     New-Item -ItemType Directory -Path $ReposDir | Out-Null
 }
 
+$GitsFile = Resolve-GitsFile -ConfiguredPath $GitsFile
 $gitUrls = Get-TrimmedLines -Path $GitsFile
 $repoMap = Build-RepoMap -GitUrls $gitUrls
 $projects = Resolve-Projects -ProjectsFilePath $ProjectsFile -RepoMap $repoMap
