@@ -464,7 +464,38 @@ void test_onMessage_nullOrderId_processOrderNotCalled() {
 - 变更代码：行覆盖率 ≥ 90%，分支覆盖率 ≥ 85%。
 - 覆盖所有分支（if/else、异常），禁止空测试或无断言凑覆盖率。
 - 未集成 JaCoCo 时：在 POM 中生成 JaCoCo 插件配置（如版本 0.8.7），并输出增量覆盖率报告说明。
-
+   ```
+   <plugin>
+                   <groupId>org.jacoco</groupId>
+                   <artifactId>jacoco-maven-plugin</artifactId>
+                   <version>0.8.7</version>
+                   <executions>
+                       <execution>
+                           <id>jacoco-initialize</id>
+                           <goals>
+                               <goal>prepare-agent</goal>
+                           </goals>
+                       </execution>
+                       <execution>
+                           <id>jacoco-site</id>
+                           <phase>test</phase>
+                           <goals>
+                               <goal>report</goal>
+                           </goals>
+                           <configuration>
+                               <dataFile>target/jacoco.exec</dataFile>
+                               <outputDirectory>target/jacoco-ut</outputDirectory>
+                               <excludes>
+                                   <exclude>**/dto/**</exclude>
+                                   <exclude>**/vo/**</exclude>
+                                   <exclude>**/enums/**</exclude>
+                                   <exclude>**/model/**</exclude>
+                               </excludes>
+                           </configuration>
+                       </execution>
+                   </executions>
+               </plugin>
+   ```
 **生成测试后必须提供：**
 
 1. **JaCoCo 报告生成命令**（Maven 示例）：
