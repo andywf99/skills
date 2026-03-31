@@ -1,0 +1,396 @@
+# {{项目名称}} 项目框架文档
+
+## 一、项目简介
+
+这是一个**{{项目类型}}**，提供{{核心功能描述}}。
+
+### 核心能力
+
+| 能力 | 描述 |
+|------|------|
+| {{能力1名称}} | {{能力1描述}} |
+| {{能力2名称}} | {{能力2描述}} |
+| {{能力3名称}} | {{能力3描述}} |
+| {{能力4名称}} | {{能力4描述}} |
+| {{能力5名称}} | {{能力5描述}} |
+
+### 技术栈
+
+| 类型 | 技术 |
+|------|------|
+| 基础框架 | {{框架名称及版本}} |
+| ORM | {{ORM框架及版本}} |
+| 数据库 | {{数据库类型及版本}} |
+| 缓存 | {{缓存技术}} |
+| 消息队列 | {{消息队列技术}} |
+| 配置中心 | {{配置中心技术}} |
+| 服务治理 | {{服务治理技术}} |
+| 定时任务 | {{定时任务框架}} |
+| 监控 | {{监控技术}} |
+| 其他 | {{其他技术}} |
+
+---
+
+## 二、项目模块
+
+### 2.1 模块架构图
+
+```
+{{项目名称}}
+├── {{web/api/controller层包名}}/    # {{Web层说明，如：控制器层 - 接收 HTTP 请求}}
+├── {{service层包名}}/                # {{Service层说明，如：服务层 - 业务逻辑处理}}
+│   ├── {{业务子模块1}}/              # {{子模块1描述}}
+│   ├── {{业务子模块2}}/              # {{子模块2描述}}
+│   └── {{业务子模块3}}/              # {{子模块3描述}}
+├── {{dao/mapper/repository层包名}}/  # {{数据访问层说明}}
+│   ├── {{业务子模块1}}/
+│   ├── {{业务子模块2}}/
+│   └── {{业务子模块3}}/
+├── {{model/entity/dto/vo包名}}/      # {{数据模型层说明}}
+│   ├── {{entity/pojo包名}}/          # {{实体类说明}}
+│   ├── {{dto/param包名}}/            # {{入参对象说明}}
+│   ├── {{vo/result包名}}/            # {{出参对象说明}}
+│   └── {{enums/constant包名}}/       # {{枚举/常量说明}}
+├── {{feign/client包名}}/             # {{远程服务调用说明}}
+├── {{cache/redis包名}}/              # {{缓存管理层说明}}
+├── {{task/job/schedule包名}}/        # {{定时任务层说明}}
+├── {{listener/consumer包名}}/        # {{消息监听层说明}}
+├── {{stream/mq包名}}/                # {{消息流层说明}}
+├── {{websocket包名}}/                # {{WebSocket通信说明}}
+├── {{aop/aspect包名}}/               # {{AOP切面说明}}
+├── {{config包名}}/                   # {{配置类说明}}
+├── {{common/base包名}}/              # {{基础组件说明}}
+└── {{util/helper包名}}/              # {{工具类说明}}
+
+说明：
+- 包名根据实际项目结构调整，如 Spring MVC 项目可能是 controller/service/dao
+- DDD 项目可能是 interfaces/application/domain/infrastructure
+- 请根据实际项目包结构进行填充
+```
+
+---
+
+## 三、各模块详细说明
+
+### 3.1 Controller 层
+
+| 类名 | 路径 | 功能 | 主要接口方法 |
+|------|------|------|-------------|
+| `{{Controller1}}` | `controller/{{Controller1}}.java` | {{功能描述}} | {{主要方法}} |
+| `{{Controller2}}` | `controller/{{Controller2}}.java` | {{功能描述}} | {{主要方法}} |
+| `{{Controller3}}` | `controller/{{Controller3}}.java` | {{功能描述}} | {{主要方法}} |
+
+#### 调用链路示例
+
+```
+{{请求入口}} -> {{控制层}} -> {{服务层}} -> {{数据访问层}} -> {{数据存储}}
+                     ↓
+               {{缓存层}}
+                     ↓
+               {{远程调用层}} -> {{外部服务}}
+```
+
+**常见架构模式说明：**
+
+| 架构模式 | 请求入口 | 控制层 | 服务层 | 数据访问层 | 数据存储 |
+|----------|----------|--------|--------|------------|----------|
+| Spring MVC | HTTP Request | Controller | Service | Mapper/DAO | Database |
+| Spring Boot | HTTP Request | Controller | Service | Repository | Database |
+| DDD | HTTP Request | Facade/Controller | Application Service | Repository | Database |
+| 微服务 | HTTP/gRPC | Api/Controller | Service | Mapper | Database |
+| Hexagonal | HTTP Request | Adapter | Port/Service | Repository | Database |
+
+**示例（根据实际项目选择）：**
+
+```
+# Spring MVC 标准模式
+HTTP Request -> Controller -> Service -> Mapper -> MySQL
+                     ↓
+                Redis Cache
+                     ↓
+               Feign Client -> 外部微服务
+
+# DDD 领域驱动设计模式
+HTTP Request -> Controller -> Application Service -> Domain Service -> Repository -> PostgreSQL
+                                           ↓
+                                      Domain Model
+                                           ↓
+                                      Event Publisher -> Message Queue
+```
+
+---
+
+### 3.2 Service 层
+
+#### 3.2.1 核心业务 Service
+
+| 接口名 | 实现类 | 功能 | 主要方法 |
+|--------|--------|------|----------|
+| `{{Service1}}` | `{{Service1}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+| `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+| `{{Service3}}` | `{{Service3}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+
+#### 3.2.2 {{子模块1}} 子模块
+
+| 接口名 | 实现类 | 功能 | 主要方法 |
+|--------|--------|------|----------|
+| `{{Service1}}` | `{{Service1}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+| `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+
+#### 3.2.3 {{子模块2}} 子模块
+
+| 接口名 | 实现类 | 功能 | 主要方法 |
+|--------|--------|------|----------|
+| `{{Service1}}` | `{{Service1}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+| `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
+
+#### 3.2.4 其他重要 Service
+
+| 接口名 | 实现类 | 功能 |
+|--------|--------|------|
+| `{{Service1}}` | `{{Service1}}Impl` | {{功能描述}} |
+| `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} |
+| `{{Service3}}` | `{{Service3}}Impl` | {{功能描述}} |
+
+---
+
+### 3.3 Mapper 层
+
+#### 3.3.1 核心 Mapper
+
+| Mapper 接口 | XML 映射文件 | 关联实体 | 主要 SQL 操作 |
+|-------------|--------------|----------|---------------|
+| `{{Mapper1}}` | `{{Mapper1}}.xml` | `{{Entity1}}` | {{SQL操作描述}} |
+| `{{Mapper2}}` | `{{Mapper2}}.xml` | `{{Entity2}}` | {{SQL操作描述}} |
+| `{{Mapper3}}` | `{{Mapper3}}.xml` | `{{Entity3}}` | {{SQL操作描述}} |
+
+#### 3.3.2 {{子模块1}} 子模块 Mapper
+
+| Mapper 接口 | 关联实体 | 功能 |
+|-------------|----------|------|
+| `{{Mapper1}}` | `{{Entity1}}` | {{功能描述}} |
+| `{{Mapper2}}` | `{{Entity2}}` | {{功能描述}} |
+
+---
+
+### 3.4 Feign 客户端 (远程服务调用)
+
+#### 3.4.1 {{服务1名称}} (`{{FeignClient1}}`)
+
+| 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
+|----------|-----------|----------|-----------|
+| `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
+| `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
+
+#### 3.4.2 {{服务2名称}} (`{{FeignClient2}}`)
+
+| 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
+|----------|-----------|----------|-----------|
+| `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
+| `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
+
+#### 3.4.3 {{服务3名称}} (`{{FeignClient3}}`)
+
+| 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
+|----------|-----------|----------|-----------|
+| `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
+| `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
+
+---
+
+### 3.5 Cache 缓存层
+
+| 缓存类 | Redis Key 前缀 | 功能 | 过期策略 |
+|--------|----------------|------|----------|
+| `{{Cache1}}` | `{{prefix1}}:` | {{功能描述}} | {{过期策略}} |
+| `{{Cache2}}` | `{{prefix2}}:` | {{功能描述}} | {{过期策略}} |
+| `{{Cache3}}` | `{{prefix3}}:` | {{功能描述}} | {{过期策略}} |
+
+---
+
+### 3.6 Task 定时任务
+
+| 任务类 | Cron 表达式 | 功能 |
+|--------|-------------|------|
+| `{{Task1}}` | {{cron表达式}} | {{功能描述}} |
+| `{{Task2}}` | {{cron表达式}} | {{功能描述}} |
+| `{{Task3}}` | {{cron表达式}} | {{功能描述}} |
+
+---
+
+### 3.7 WebSocket 模块
+
+| 类名 | 功能 | 消息类型 |
+|------|------|----------|
+| `{{WebSocketConfig}}` | WebSocket 配置 | - |
+| `{{Handler1}}` | {{功能描述}} | {{消息类型}} |
+| `{{Handler2}}` | {{功能描述}} | {{消息类型}} |
+
+---
+
+### 3.8 AOP 切面
+
+| 切面类 | 注解 | 功能 | 应用场景 |
+|--------|------|------|----------|
+| `{{Aspect1}}` | `@{{Annotation1}}` | {{功能描述}} | {{应用场景}} |
+| `{{Aspect2}}` | `@{{Annotation2}}` | {{功能描述}} | {{应用场景}} |
+| `{{Aspect3}}` | `@{{Annotation3}}` | {{功能描述}} | {{应用场景}} |
+
+---
+
+### 3.9 Listener 消息监听器
+
+| 监听器类 | 消息源 | 功能 |
+|----------|--------|------|
+| {{Listener1}} | {{消息源1}} | {{功能描述}} |
+| {{Listener2}} | {{消息源2}} | {{功能描述}} |
+
+---
+
+### 3.10 Stream 消息流
+
+| Stream 类 | Channel | 功能 |
+|-----------|---------|------|
+| {{Stream1}} | {{Channel1}} | {{功能描述}} |
+| {{Stream2}} | {{Channel2}} | {{功能描述}} |
+
+---
+
+## 四、配置文件清单
+
+| 文件 | 路径 | 用途 |
+|------|------|------|
+| `pom.xml` | 根目录 | Maven 依赖配置 |
+| `application.yaml` | `src/main/resources/` | Spring Boot 主配置 |
+| `bootstrap.yml` | `src/main/resources/` | Spring Cloud 启动配置 |
+| `logback-spring.xml` | `src/main/resources/` | Logback 日志配置 |
+| `app.properties` | `src/main/resources/META-INF/` | 应用属性 |
+| `mapper/*.xml` | `src/main/resources/mapper/` | MyBatis XML 映射 |
+
+---
+
+## 五、外部依赖服务
+
+### 5.1 AI 服务（如有）
+
+| 服务名 | 客户端类 | 用途 | 主要接口 |
+|--------|----------|------|----------|
+| {{AI服务1}} | `{{ClientClass}}` | {{用途}} | `{{method}}` - {{说明}} |
+| {{AI服务2}} | `{{ClientClass}}` | {{用途}} | `{{method}}` - {{说明}} |
+
+### 5.2 Feign 远程服务调用清单
+
+| 序号 | 服务名 | 客户端类 | 接口数量 |
+|------|--------|----------|----------|
+| 1 | {{服务1}} | `{{FeignClient1}}` | {{数量}} |
+| 2 | {{服务2}} | `{{FeignClient2}}` | {{数量}} |
+| 3 | {{服务3}} | `{{FeignClient3}}` | {{数量}} |
+
+> 详细接口地址和说明请参见 **3.4 Feign 客户端 (远程服务调用)** 章节
+
+---
+
+*文档更新时间: {{YYYY-MM-DD HH:mm:ss}}*
+
+---
+
+# 使用说明
+
+## 模板变量说明
+
+### 基础信息变量
+
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| `{{项目名称}}` | 项目名称 | yl-jms-sqs-online-api |
+| `{{项目类型}}` | 项目类型描述 | 在线客服系统 |
+| `{{核心功能描述}}` | 核心功能一句话描述 | 客户与客服的实时聊天、机器人自动回复 |
+| `{{能力N名称}}` | 第N个核心能力名称 | 实时聊天 |
+| `{{能力N描述}}` | 第N个核心能力描述 | WebSocket 实现双向通信 |
+
+### 包结构变量（根据实际项目调整）
+
+| 变量 | 说明 | 常见值 |
+|------|------|--------|
+| `{{web/api/controller层包名}}` | Web层包名 | controller, api, interfaces, rest |
+| `{{service层包名}}` | 服务层包名 | service, application, manager |
+| `{{dao/mapper/repository层包名}}` | 数据访问层包名 | mapper, dao, repository, persistence |
+| `{{model/entity/dto/vo包名}}` | 模型层包名 | model, entity, domain |
+| `{{entity/pojo包名}}` | 实体类包名 | entity, pojo, domain |
+| `{{dto/param包名}}` | 入参对象包名 | dto, param, request, command |
+| `{{vo/result包名}}` | 出参对象包名 | vo, result, response, dto |
+| `{{enums/constant包名}}` | 枚举/常量包名 | enums, constant, type |
+| `{{feign/client包名}}` | 远程调用包名 | feign, client, remote, rpc |
+| `{{cache/redis包名}}` | 缓存层包名 | cache, redis |
+| `{{task/job/schedule包名}}` | 定时任务包名 | task, job, schedule, cron |
+| `{{listener/consumer包名}}` | 消息监听包名 | listener, consumer, handler |
+| `{{stream/mq包名}}` | 消息流包名 | stream, mq, message |
+| `{{aop/aspect包名}}` | 切面包名 | aop, aspect |
+| `{{config包名}}` | 配置包名 | config, configuration |
+| `{{common/base包名}}` | 基础组件包名 | common, base, shared |
+| `{{util/helper包名}}` | 工具类包名 | util, helper, utils |
+
+### 类名变量
+
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| `{{ControllerN}}` | 第N个Controller类名 | AgentController |
+| `{{ServiceN}}` | 第N个Service接口名 | CustomerSessionService |
+| `{{MapperN}}` | 第N个Mapper接口名 | CustomerSessionMapper |
+| `{{FeignClientN}}` | 第N个Feign客户端名 | WaybillFeignClient |
+| `{{CacheN}}` | 第N个缓存类名 | UserTokenCache |
+| `{{TaskN}}` | 第N个定时任务类名 | SyncDataTask |
+
+### 接口相关变量
+
+| 变量 | 说明 | 示例 |
+|------|------|------|
+| `{{/api/pathN}}` | 第N个API路径 | /waybill/detail |
+| `{{FeignClient服务名}}` | Feign目标服务名 | yl-waybill-api |
+
+## 使用步骤
+
+### 1. 扫描项目结构
+
+```bash
+# 扫描 Java 文件
+Glob pattern: **/*.java
+
+# 分类扫描
+Glob pattern: **/controller/**/*.java   # Web层
+Glob pattern: **/service/**/*.java      # 服务层
+Glob pattern: **/mapper/**/*.java       # 数据访问层
+Glob pattern: **/entity/**/*.java       # 实体类
+Glob pattern: **/feign/**/*.java        # 远程调用
+```
+
+### 2. 识别项目架构模式
+
+| 特征 | 架构模式 | 包结构特点 |
+|------|----------|------------|
+| controller/service/dao | 分层架构 | 按技术职责划分 |
+| interfaces/application/domain/infrastructure | DDD架构 | 按领域划分 |
+| api/rpc/job/mq | 微服务架构 | 按调用方式划分 |
+| web/biz/dal | 阿里巴巴架构 | 阿里巴巴内部规范 |
+
+### 3. 提取 Feign 接口
+
+```
+扫描 feign 包下的接口文件
+读取 @FeignClient 注解获取服务名和路径
+读取 @GetMapping/@PostMapping 等获取接口路径
+```
+
+### 4. 填充模板
+
+1. 替换所有 `{{变量}}` 为实际值
+2. 删除不需要的模块章节（如项目无 WebSocket，删除该章节）
+3. 调整章节编号保持连续
+4. 更新文档时间戳
+
+### 5. 验证文档
+
+- 检查表格格式是否正确（列数一致）
+- 确认所有类名、方法名正确
+- 检查接口路径是否完整
+- 确认技术栈版本信息准确
