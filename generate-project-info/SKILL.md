@@ -36,7 +36,7 @@ Glob pattern: project-info.md
 2. 替换所有 `{{变量}}` 为实际值
 3. 删除不需要的章节（如项目无 WebSocket）
 4. 调整章节编号
-5. 更新文档时间戳为当前系统时间
+5. **更新文档时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，严禁自行编造时间
 6. 写入 `project-info.md`
 
 #### 增量更新模式
@@ -44,7 +44,7 @@ Glob pattern: project-info.md
 1. **读取现有文档**：解析当前 `project-info.md` 内容
 2. **识别变更范围**：根据 Git 变更文件路径确定影响的章节
 3. **局部更新**：仅重新扫描变更涉及的模块，保留未变更章节
-4. **更新时间戳**：更新为当前系统时间
+4. **更新时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，严禁自行编造时间
 5. **写入更新**：覆盖原文件
 
 **增量扫描命令**：
@@ -62,18 +62,20 @@ git diff master...HEAD --name-status
 
 **章节与扫描路径对应关系**：
 
-| 模板章节 | 章节名称 | 扫描路径 |
-|----------|----------|----------|
-| 3.1 | Controller 层 | `**/controller/**/*.java` |
-| 3.2 | Service 层 | `**/service/**/*.java` |
-| 3.3 | Mapper 层 | `**/mapper/**/*.java` |
-| 3.4 | Entity 实体类 | `**/entity/**/*.java` |
-| 3.5 | Feign 客户端 | `**/feign/**/*.java` |
-| 3.6 | Cache 缓存层 | `**/cache/**/*.java` |
-| 3.7 | Task 定时任务 | `**/task/**/*.java` |
-| 3.8 | AOP 切面 | `**/aop/**/*.java` |
-| 3.9 | 消息中间件 | `**/stream/**/*.java`, `**/consumer/**/*.java`, `**/producer/**/*.java` |
-| 3.10 | Config 配置类 | `**/config/**/*.java` |
+> **说明**：模板中不使用固定序号，章节编号在生成文档时根据实际存在的模块动态编排。下表仅表示章节名称与扫描路径的对应关系。
+
+| 章节名称 | 扫描路径 |
+|----------|----------|
+| Controller 层 | `**/controller/**/*.java` |
+| Service 层 | `**/service/**/*.java` |
+| Mapper 层 | `**/mapper/**/*.java` |
+| Entity 实体类 | `**/entity/**/*.java` |
+| Feign 客户端 | `**/feign/**/*.java` |
+| Cache 缓存层 | `**/cache/**/*.java` |
+| Task 定时任务 | `**/task/**/*.java` |
+| AOP 切面 | `**/aop/**/*.java` |
+| 消息中间件 | `**/stream/**/*.java`, `**/consumer/**/*.java`, `**/producer/**/*.java` |
+| Config 配置类 | `**/config/**/*.java` |
 
 ---
 
@@ -140,7 +142,7 @@ src/main/java/com/jt/project/
 
 ### 步骤 4：扫描核心分层组件
 
-#### 4.1 Controller 层（对应模板 3.1）
+#### 4.1 Controller 层
 
 ```
 Glob pattern: **/controller/**/*.java
@@ -153,7 +155,7 @@ Glob pattern: **/interfaces/**/*.java
 - `@RequestMapping` 路径前缀
 - 主要方法（`@GetMapping`/`@PostMapping` 等）
 
-#### 4.2 Service 层（对应模板 3.2）
+#### 4.2 Service 层
 
 ```
 Glob pattern: **/service/**/*.java
@@ -165,7 +167,7 @@ Glob pattern: **/application/**/*.java
 - 主要方法名
 - 子模块划分（如 `knowledge/`、`process/` 等）
 
-#### 4.3 Mapper 层（对应模板 3.3）
+#### 4.3 Mapper 层
 
 ```
 Glob pattern: **/mapper/**/*.java
@@ -182,7 +184,7 @@ Glob pattern: **/repository/**/*.java
 
 ### 步骤 5：扫描数据模型
 
-#### 5.1 Entity 实体类（对应模板 3.4）
+#### 5.1 Entity 实体类
 
 ```
 Glob pattern: **/model/entity/**/*.java
@@ -242,7 +244,7 @@ Glob pattern: **/response/**/*.java
 
 ### 步骤 6：扫描外部依赖
 
-#### 6.1 Feign 客户端（对应模板 3.5）
+#### 6.1 Feign 客户端
 
 ```
 Glob pattern: **/feign/**/*.java
@@ -299,7 +301,7 @@ public interface WaybillFeignClient {
 
 ### 步骤 7：扫描基础设施组件
 
-#### 7.1 Cache 缓存层（对应模板 3.6）
+#### 7.1 Cache 缓存层
 
 ```
 Glob pattern: **/cache/**/*.java
@@ -308,7 +310,7 @@ Glob pattern: **/redis/**/*.java
 
 **提取信息**：Redis Key 前缀、过期策略
 
-#### 7.2 Task 定时任务（对应模板 3.7）
+#### 7.2 Task 定时任务
 
 ```
 Glob pattern: **/task/**/*.java
@@ -318,7 +320,7 @@ Glob pattern: **/schedule/**/*.java
 
 **提取信息**：`@XxlJob` 或 `@Scheduled` 注解中的任务名称和 Cron 表达式
 
-#### 7.3 AOP 切面（对应模板 3.8）
+#### 7.3 AOP 切面
 
 ```
 Glob pattern: **/aop/**/*.java
@@ -327,7 +329,7 @@ Glob pattern: **/aspect/**/*.java
 
 **提取信息**：切面类、注解、功能、应用场景
 
-#### 7.4 消息中间件（对应模板 3.9）
+#### 7.4 消息中间件
 
 项目中可能同时存在 **Spring Cloud Stream** 和 **RocketMQ** 两种消息中间件用法，需要分别扫描。
 
@@ -422,7 +424,7 @@ Grep pattern: @RocketMQDynamicListener
 |------------|----------|------|----------|----------|------|
 | `topic-name` | `ConsumerClass` | `@RocketMQDynamicListener` | `MessageDTO` | 集群/广播 | 消费场景说明 |
 
-#### 7.5 Config 配置类（对应模板 3.10）
+#### 7.5 Config 配置类
 
 ```
 Glob pattern: **/config/**/*.java
@@ -491,6 +493,6 @@ Read: bootstrap.yml   -> 提取 Spring Cloud 配置
 2. **路径拼接**：Feign 接口完整路径 = `@FeignClient.path` + `@XxxMapping.value`
 3. **泛型解析**：返回类型需要解析泛型参数，如 `Result<OmsWaybillDetailVO>` 中的 `OmsWaybillDetailVO`
 4. **章节删除**：如果项目没有某个模块，需要删除对应章节并调整编号
-5. **时间戳**：文档更新时间使用当前系统时间，格式为 `YYYY-MM-DD HH:mm:ss`
+5. **时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，格式为 `YYYY-MM-DD HH:mm:ss`，严禁自行编造时间
 
 ---

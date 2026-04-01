@@ -1,6 +1,6 @@
 # {{项目名称}} 项目框架文档
 
-## 一、项目简介
+## 项目简介
 
 这是一个**{{项目类型}}**，提供{{核心功能描述}}。
 
@@ -31,9 +31,9 @@
 
 ---
 
-## 二、项目模块
+## 项目模块
 
-### 2.1 模块架构图
+### 模块架构图
 
 ```
 {{项目名称}}
@@ -70,9 +70,9 @@
 
 ---
 
-## 三、各模块详细说明
+## 各模块详细说明
 
-### 3.1 Controller 层
+### Controller 层
 
 | 类名 | 路径 | 功能 | 主要接口方法 |
 |------|------|------|-------------|
@@ -120,9 +120,9 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.2 Service 层
+### Service 层
 
-#### 3.2.1 核心业务 Service
+#### 核心业务 Service
 
 | 接口名 | 实现类 | 功能 | 主要方法 |
 |--------|--------|------|----------|
@@ -130,21 +130,21 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 | `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
 | `{{Service3}}` | `{{Service3}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
 
-#### 3.2.2 {{子模块1}} 子模块
+#### {{子模块1}} 子模块
 
 | 接口名 | 实现类 | 功能 | 主要方法 |
 |--------|--------|------|----------|
 | `{{Service1}}` | `{{Service1}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
 | `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
 
-#### 3.2.3 {{子模块2}} 子模块
+#### {{子模块2}} 子模块
 
 | 接口名 | 实现类 | 功能 | 主要方法 |
 |--------|--------|------|----------|
 | `{{Service1}}` | `{{Service1}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
 | `{{Service2}}` | `{{Service2}}Impl` | {{功能描述}} | `{{method1}}`, `{{method2}}` |
 
-#### 3.2.4 其他重要 Service
+#### 其他重要 Service
 
 | 接口名 | 实现类 | 功能 |
 |--------|--------|------|
@@ -154,9 +154,9 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.3 Mapper 层
+### Mapper 层
 
-#### 3.3.1 核心 Mapper
+#### 核心 Mapper
 
 | Mapper 接口 | XML 映射文件 | 关联实体 | 主要 SQL 操作 |
 |-------------|--------------|----------|---------------|
@@ -164,7 +164,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 | `{{Mapper2}}` | `{{Mapper2}}.xml` | `{{Entity2}}` | {{SQL操作描述}} |
 | `{{Mapper3}}` | `{{Mapper3}}.xml` | `{{Entity3}}` | {{SQL操作描述}} |
 
-#### 3.3.2 {{子模块1}} 子模块 Mapper
+#### {{子模块1}} 子模块 Mapper
 
 | Mapper 接口 | 关联实体 | 功能 |
 |-------------|----------|------|
@@ -173,9 +173,9 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.4 Entity 实体类
+### Entity 实体类
 
-#### 3.4.1 基础实体类
+#### 基础实体类
 
 {{扫描项目中的基础实体类（通常以 Base、Abstract、Generic 开头或位于 common/base 包下），列出继承关系和公共字段}}
 
@@ -198,7 +198,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-#### 3.4.2 业务实体类
+#### 业务实体类
 
 {{按业务模块分类列出实体类，每个实体包含字段名、类型、说明}}
 
@@ -212,23 +212,23 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.5 Feign 客户端 (远程服务调用)
+### Feign 客户端 (远程服务调用)
 
-#### 3.5.1 {{服务1名称}} (`{{FeignClient1}}`)
-
-| 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
-|----------|-----------|----------|-----------|
-| `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
-| `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
-
-#### 3.5.2 {{服务2名称}} (`{{FeignClient2}}`)
+#### {{服务1名称}} (`{{FeignClient1}}`)
 
 | 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
 |----------|-----------|----------|-----------|
 | `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
 | `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
 
-#### 3.5.3 {{服务3名称}} (`{{FeignClient3}}`)
+#### {{服务2名称}} (`{{FeignClient2}}`)
+
+| 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
+|----------|-----------|----------|-----------|
+| `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
+| `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
+
+#### {{服务3名称}} (`{{FeignClient3}}`)
 
 | 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
 |----------|-----------|----------|-----------|
@@ -237,7 +237,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.6 Cache 缓存层
+### Cache 缓存层
 
 | 缓存类 | Redis Key 前缀 | 功能 | 过期策略 |
 |--------|----------------|------|----------|
@@ -247,7 +247,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.7 Task 定时任务
+### Task 定时任务
 
 | 任务类 | Cron 表达式 | 功能 |
 |--------|-------------|------|
@@ -257,7 +257,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.8 AOP 切面
+### AOP 切面
 
 | 切面类 | 注解 | 功能 | 应用场景 |
 |--------|------|------|----------|
@@ -267,11 +267,11 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.9 消息中间件
+### 消息中间件
 
 > **说明**：项目中可能同时存在 Spring Cloud Stream 和 RocketMQ 两种消息中间件，根据实际扫描结果生成对应章节。
 
-#### 3.9.1 Spring Cloud Stream（如存在）
+#### Spring Cloud Stream（如存在）
 
 **概述**：项目使用 **Spring Cloud Stream** 实现消息驱动，具体 Topic 配置通过 **Apollo 配置中心** 管理。
 
@@ -295,7 +295,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 |--------------|-------------|-------|------|----------|----------|------|
 | {{channel-name-input}} | {{destination-name}} | {{group-name}} | `methodName()` | `MessageDTO` | `service.method()` | {{消息说明}} |
 
-#### 3.9.2 RocketMQ（如存在）
+#### RocketMQ（如存在）
 
 **概述**：项目使用 **RocketMQ** 实现消息收发，可能使用 `spring-boot-starter-rocketmq` 或 `yl-sqs-platform-rocketmq`。
 
@@ -335,7 +335,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.10 Config 配置类
+### Config 配置类
 
 | 配置类 | 功能 | 主要配置项 |
 |--------|------|------------|
@@ -345,7 +345,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-## 四、配置文件清单
+## 配置文件清单
 
 | 文件 | 路径 | 用途 |
 |------|------|------|
@@ -358,16 +358,16 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-## 五、外部依赖服务
+## 外部依赖服务
 
-### 5.1 AI 服务（如有）
+### AI 服务（如有）
 
 | 服务名 | 客户端类 | 用途 | 主要接口 |
 |--------|----------|------|----------|
 | {{AI服务1}} | `{{ClientClass}}` | {{用途}} | `{{method}}` - {{说明}} |
 | {{AI服务2}} | `{{ClientClass}}` | {{用途}} | `{{method}}` - {{说明}} |
 
-### 5.2 Feign 远程服务调用清单
+### Feign 远程服务调用清单
 
 | 序号 | 服务名 | 客户端类 | 接口数量 |
 |------|--------|----------|----------|
@@ -375,7 +375,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 | 2 | {{服务2}} | `{{FeignClient2}}` | {{数量}} |
 | 3 | {{服务3}} | `{{FeignClient3}}` | {{数量}} |
 
-> 详细接口地址和说明请参见 **3.4 Feign 客户端 (远程服务调用)** 章节
+> 详细接口地址和说明请参见 **Feign 客户端 (远程服务调用)** 章节
 
 ---
 
