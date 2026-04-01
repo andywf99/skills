@@ -71,8 +71,8 @@ git diff master...HEAD --name-status
 | 3.5 | Feign 客户端 | `**/feign/**/*.java` |
 | 3.6 | Cache 缓存层 | `**/cache/**/*.java` |
 | 3.7 | Task 定时任务 | `**/task/**/*.java` |
-| 3.8 | 消息中间件 | `**/stream/**/*.java`, `**/consumer/**/*.java`, `**/producer/**/*.java` |
-| 3.9 | AOP 切面 | `**/aop/**/*.java` |
+| 3.8 | AOP 切面 | `**/aop/**/*.java` |
+| 3.9 | 消息中间件 | `**/stream/**/*.java`, `**/consumer/**/*.java`, `**/producer/**/*.java` |
 | 3.10 | Config 配置类 | `**/config/**/*.java` |
 
 ---
@@ -94,7 +94,7 @@ Glob pattern: src/main/java/**/*
 
 ---
 
-### 步骤 2.5：生成模块架构图
+### 步骤 3：生成模块架构图
 
 **模块架构图必须根据实际扫描结果动态生成，不使用固定模板。**
 
@@ -138,9 +138,9 @@ src/main/java/com/jt/project/
 
 ---
 
-### 步骤 3：扫描核心分层组件
+### 步骤 4：扫描核心分层组件
 
-#### 3.1 Controller 层（对应模板 3.1）
+#### 4.1 Controller 层（对应模板 3.1）
 
 ```
 Glob pattern: **/controller/**/*.java
@@ -153,7 +153,7 @@ Glob pattern: **/interfaces/**/*.java
 - `@RequestMapping` 路径前缀
 - 主要方法（`@GetMapping`/`@PostMapping` 等）
 
-#### 3.2 Service 层（对应模板 3.2）
+#### 4.2 Service 层（对应模板 3.2）
 
 ```
 Glob pattern: **/service/**/*.java
@@ -165,7 +165,7 @@ Glob pattern: **/application/**/*.java
 - 主要方法名
 - 子模块划分（如 `knowledge/`、`process/` 等）
 
-#### 3.3 Mapper 层（对应模板 3.3）
+#### 4.3 Mapper 层（对应模板 3.3）
 
 ```
 Glob pattern: **/mapper/**/*.java
@@ -180,9 +180,9 @@ Glob pattern: **/repository/**/*.java
 
 ---
 
-### 步骤 4：扫描数据模型
+### 步骤 5：扫描数据模型
 
-#### 4.1 Entity 实体类（对应模板 3.4）
+#### 5.1 Entity 实体类（对应模板 3.4）
 
 ```
 Glob pattern: **/model/entity/**/*.java
@@ -224,7 +224,7 @@ Glob pattern: **/pojo/**/*.java
 | `field2` | `Integer` | 字段2说明 |
 ```
 
-#### 4.2 DTO/VO 类
+#### 5.2 DTO/VO 类
 
 ```
 Glob pattern: **/dto/**/*.java
@@ -240,9 +240,9 @@ Glob pattern: **/response/**/*.java
 
 ---
 
-### 步骤 5：扫描外部依赖
+### 步骤 6：扫描外部依赖
 
-#### 5.1 Feign 客户端（对应模板 3.5）
+#### 6.1 Feign 客户端（对应模板 3.5）
 
 ```
 Glob pattern: **/feign/**/*.java
@@ -297,9 +297,9 @@ public interface WaybillFeignClient {
 
 ---
 
-### 步骤 6：扫描基础设施组件
+### 步骤 7：扫描基础设施组件
 
-#### 6.1 Cache 缓存层（对应模板 3.6）
+#### 7.1 Cache 缓存层（对应模板 3.6）
 
 ```
 Glob pattern: **/cache/**/*.java
@@ -308,7 +308,7 @@ Glob pattern: **/redis/**/*.java
 
 **提取信息**：Redis Key 前缀、过期策略
 
-#### 6.2 Task 定时任务（对应模板 3.7）
+#### 7.2 Task 定时任务（对应模板 3.7）
 
 ```
 Glob pattern: **/task/**/*.java
@@ -318,7 +318,7 @@ Glob pattern: **/schedule/**/*.java
 
 **提取信息**：`@XxlJob` 或 `@Scheduled` 注解中的任务名称和 Cron 表达式
 
-#### 6.3 AOP 切面（对应模板 3.8）
+#### 7.3 AOP 切面（对应模板 3.8）
 
 ```
 Glob pattern: **/aop/**/*.java
@@ -327,11 +327,11 @@ Glob pattern: **/aspect/**/*.java
 
 **提取信息**：切面类、注解、功能、应用场景
 
-#### 6.4 消息中间件（对应模板 3.6）
+#### 7.4 消息中间件（对应模板 3.9）
 
 项目中可能同时存在 **Spring Cloud Stream** 和 **RocketMQ** 两种消息中间件用法，需要分别扫描。
 
-##### 6.4.1 检测消息中间件类型
+##### 7.4.1 检测消息中间件类型
 
 ```
 # 检测 Spring Cloud Stream
@@ -346,7 +346,7 @@ Grep pattern: yl-sqs-platform-rocketmq|RocketMQProducer|RocketMQConsumer
 Grep pattern: @RocketMQDynamicListener|RocketMQDynamicPublisher
 ```
 
-##### 6.4.2 Spring Cloud Stream 扫描
+##### 7.4.2 Spring Cloud Stream 扫描
 
 ```
 Glob pattern: **/stream/**/*.java
@@ -370,7 +370,7 @@ Glob pattern: **/stream/**/*.java
 |--------------|------|----------|----------|------|
 | `channel-name-input` | `methodName()` | `MessageDTO` | `service.method()` | 消息说明 |
 
-##### 6.4.3 RocketMQ 扫描
+##### 7.4.3 RocketMQ 扫描
 
 ```
 # 扫描生产者（标准模式）
@@ -422,7 +422,7 @@ Grep pattern: @RocketMQDynamicListener
 |------------|----------|------|----------|----------|------|
 | `topic-name` | `ConsumerClass` | `@RocketMQDynamicListener` | `MessageDTO` | 集群/广播 | 消费场景说明 |
 
-#### 6.5 AOP 切面（对应模板 3.7）
+#### 7.5 Config 配置类（对应模板 3.10）
 
 ```
 Glob pattern: **/config/**/*.java
@@ -433,7 +433,7 @@ Glob pattern: **/configuration/**/*.java
 
 ---
 
-### 步骤 7：读取配置文件
+### 步骤 8：读取配置文件
 
 ```
 Read: pom.xml         -> 提取依赖和版本
@@ -494,21 +494,3 @@ Read: bootstrap.yml   -> 提取 Spring Cloud 配置
 5. **时间戳**：文档更新时间使用当前系统时间，格式为 `YYYY-MM-DD HH:mm:ss`
 
 ---
-
-## 常见问题
-
-### Q1: 项目没有 feign 包怎么办？
-
-扫描 `client/`、`remote/`、`rpc/` 等包，或跳过 Feign 章节。
-
-### Q2: 如何识别 DDD 架构？
-
-检查是否存在 `interfaces/`、`application/`、`domain/`、`infrastructure/` 包。
-
-### Q3: 多模块项目怎么处理？
-
-识别子模块，在模块架构图中展示多模块结构。
-
-### Q4: Feign 接口方法过多怎么办？
-
-按服务分组，每个服务一个子章节，接口过多时可以只列出主要接口并标注"等N个接口"。

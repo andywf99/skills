@@ -267,11 +267,11 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.6 消息中间件
+### 3.9 消息中间件
 
 > **说明**：项目中可能同时存在 Spring Cloud Stream 和 RocketMQ 两种消息中间件，根据实际扫描结果生成对应章节。
 
-#### 3.6.1 Spring Cloud Stream（如存在）
+#### 3.9.1 Spring Cloud Stream（如存在）
 
 **概述**：项目使用 **Spring Cloud Stream** 实现消息驱动，具体 Topic 配置通过 **Apollo 配置中心** 管理。
 
@@ -295,7 +295,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 |--------------|-------------|-------|------|----------|----------|------|
 | {{channel-name-input}} | {{destination-name}} | {{group-name}} | `methodName()` | `MessageDTO` | `service.method()` | {{消息说明}} |
 
-#### 3.6.2 RocketMQ（如存在）
+#### 3.9.2 RocketMQ（如存在）
 
 **概述**：项目使用 **RocketMQ** 实现消息收发，可能使用 `spring-boot-starter-rocketmq` 或 `yl-sqs-platform-rocketmq`。
 
@@ -335,7 +335,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.7 Config 配置类
+### 3.10 Config 配置类
 
 | 配置类 | 功能 | 主要配置项 |
 |--------|------|------------|
@@ -380,106 +380,3 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 ---
 
 *文档更新时间: {{YYYY-MM-DD HH:mm:ss}}*
-
----
-
-# 使用说明
-
-## 模板变量说明
-
-### 基础信息变量
-
-| 变量 | 说明 | 示例 |
-|------|------|------|
-| `{{项目名称}}` | 项目名称 | yl-jms-sqs-online-api |
-| `{{项目类型}}` | 项目类型描述 | 在线客服系统 |
-| `{{核心功能描述}}` | 核心功能一句话描述 | 客户与客服的实时聊天、机器人自动回复 |
-| `{{能力N名称}}` | 第N个核心能力名称 | 实时聊天 |
-| `{{能力N描述}}` | 第N个核心能力描述 | WebSocket 实现双向通信 |
-
-### 包结构变量（根据实际项目调整）
-
-| 变量 | 说明 | 常见值 |
-|------|------|--------|
-| `{{web/api/controller层包名}}` | Web层包名 | controller, api, interfaces, rest |
-| `{{service层包名}}` | 服务层包名 | service, application, manager |
-| `{{dao/mapper/repository层包名}}` | 数据访问层包名 | mapper, dao, repository, persistence |
-| `{{model/entity/dto/vo包名}}` | 模型层包名 | model, entity, domain |
-| `{{entity/pojo包名}}` | 实体类包名 | entity, pojo, domain |
-| `{{dto/param包名}}` | 入参对象包名 | dto, param, request, command |
-| `{{vo/result包名}}` | 出参对象包名 | vo, result, response, dto |
-| `{{enums/constant包名}}` | 枚举/常量包名 | enums, constant, type |
-| `{{feign/client包名}}` | 远程调用包名 | feign, client, remote, rpc |
-| `{{cache/redis包名}}` | 缓存层包名 | cache, redis |
-| `{{task/job/schedule包名}}` | 定时任务包名 | task, job, schedule, cron |
-| `{{listener/consumer包名}}` | 消息监听包名 | listener, consumer, handler |
-| `{{stream/mq包名}}` | 消息流包名 | stream, mq, message |
-| `{{aop/aspect包名}}` | 切面包名 | aop, aspect |
-| `{{config包名}}` | 配置包名 | config, configuration |
-| `{{common/base包名}}` | 基础组件包名 | common, base, shared |
-| `{{util/helper包名}}` | 工具类包名 | util, helper, utils |
-
-### 类名变量
-
-| 变量 | 说明 | 示例 |
-|------|------|------|
-| `{{ControllerN}}` | 第N个Controller类名 | AgentController |
-| `{{ServiceN}}` | 第N个Service接口名 | CustomerSessionService |
-| `{{MapperN}}` | 第N个Mapper接口名 | CustomerSessionMapper |
-| `{{FeignClientN}}` | 第N个Feign客户端名 | WaybillFeignClient |
-| `{{CacheN}}` | 第N个缓存类名 | UserTokenCache |
-| `{{TaskN}}` | 第N个定时任务类名 | SyncDataTask |
-
-### 接口相关变量
-
-| 变量 | 说明 | 示例 |
-|------|------|------|
-| `{{/api/pathN}}` | 第N个API路径 | /waybill/detail |
-| `{{FeignClient服务名}}` | Feign目标服务名 | yl-waybill-api |
-
-## 使用步骤
-
-### 1. 扫描项目结构
-
-```bash
-# 扫描 Java 文件
-Glob pattern: **/*.java
-
-# 分类扫描
-Glob pattern: **/controller/**/*.java   # Web层
-Glob pattern: **/service/**/*.java      # 服务层
-Glob pattern: **/mapper/**/*.java       # 数据访问层
-Glob pattern: **/entity/**/*.java       # 实体类
-Glob pattern: **/feign/**/*.java        # 远程调用
-```
-
-### 2. 识别项目架构模式
-
-| 特征 | 架构模式 | 包结构特点 |
-|------|----------|------------|
-| controller/service/dao | 分层架构 | 按技术职责划分 |
-| interfaces/application/domain/infrastructure | DDD架构 | 按领域划分 |
-| api/rpc/job/mq | 微服务架构 | 按调用方式划分 |
-| web/biz/dal | 阿里巴巴架构 | 阿里巴巴内部规范 |
-
-### 3. 提取 Feign 接口
-
-```
-扫描 feign 包下的接口文件
-读取 @FeignClient 注解获取服务名和路径
-读取 @GetMapping/@PostMapping 等获取接口路径
-```
-
-### 4. 填充模板
-
-1. 替换所有 `{{变量}}` 为实际值
-2. 删除不需要的模块章节（如项目无 WebSocket，删除该章节）
-3. 调整章节编号保持连续
-4. 更新文档时间戳
-
-### 5. 验证文档
-
-- 检查表格格式是否正确（列数一致）
-- 确认所有类名、方法名正确
-- 检查接口路径是否完整
-- 确认技术栈版本信息准确
