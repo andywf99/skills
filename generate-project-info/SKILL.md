@@ -17,7 +17,28 @@ description: 扫描 Java 项目结构，根据模板生成项目框架文档（p
 
 ## 执行流程
 
-### 步骤 1：检查现有文档，确定执行模式并生成/更新文档
+> **核心原则**：采用 **分阶段串行执行**，每扫描完一个模块立即填充文档对应章节，避免一次性加载所有信息导致上下文过长。
+
+### 执行流程总览
+
+```
+阶段1: 项目结构扫描 → 生成文档骨架
+         ↓
+阶段2: 逐模块扫描 → 立即填充对应章节
+         ├── Controller 层 → 填充 Controller 章节
+         ├── Service 层 → 填充 Service 章节
+         ├── Mapper 层 → 填充 Mapper 章节
+         ├── Entity 实体类 → 填充 Entity 章节
+         ├── Feign 客户端 → 填充 Feign 章节
+         ├── Cache/Task/AOP → 填充对应章节
+         └── 消息中间件 → 填充消息章节
+         ↓
+阶段3: 收尾 → 更新时间戳、验证完整性
+```
+
+---
+
+### 步骤 1：检查现有文档，确定执行模式
 
 **首先检查项目根目录是否存在 `project-info.md` 文件：**
 
@@ -32,20 +53,76 @@ Glob pattern: project-info.md
 
 #### 完整生成模式
 
+**阶段 1：生成文档骨架**
+
 1. 读取 `project-info-template.md`
-2. 替换所有 `{{变量}}` 为实际值
-3. 删除不需要的章节（如项目无 WebSocket）
-4. 调整章节编号
-5. **更新文档时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，严禁自行编造时间
-6. 写入 `project-info.md`
+2. 扫描项目根目录名，替换 `{{项目名称}}`
+3. 扫描 `pom.xml`，提取技术栈信息填充"技术栈"章节
+4. 扫描 `src/main/java` 包结构，生成"模块架构图"
+5. 生成只包含骨架的 `project-info.md`（章节标题已确定，内容待填充）
+
+**阶段 2：逐模块扫描填充**
+
+按以下顺序依次扫描，**每完成一个模块立即 Edit 文档填充对应章节**：
+
+| 序号 | 模块 | 扫描命令 | 填充章节 |
+|------|------|----------|----------|
+| 1 | Controller | `Glob **/controller/**/*.java` | Controller 层 |
+| 2 | Service | `Glob **/service/**/*.java` | Service 层 |
+| 3 | Mapper | `Glob **/mapper/**/*.java` | Mapper 层 |
+| 4 | Entity | `Glob **/entity/**/*.java` | Entity 实体类 |
+| 5 | Feign | `Glob **/feign/**/*.java` | Feign 客户端 |
+| 6 | Cache | `Glob **/cache/**/*.java` | Cache 缓存层 |
+| 7 | Task | `Glob **/task/**/*.java` | Task 定时任务 |
+| 8 | AOP | `Glob **/aop/**/*.java` | AOP 切面 |
+| 9 | MQ | `Grep RocketMQ\|Stream` | 消息中间件 |
+| 10 | Config | `Glob **/config/**/*.java` | Config 配置类 |
+
+**关键原则**：
+- ✅ **扫描一个，填充一个**：不要等所有模块扫描完再统一写入
+- ✅ **用 Edit 而非 Write**：每次只更新对应章节，保留其他章节内容
+- ✅ **删除空章节**：如果模块不存在，直接删除对应章节
+
+**阶段 3：收尾**
+
+1. 删除不需要的章节（如项目无 WebSocket）
+2. **更新文档时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，严禁自行编造时间
+3. 验证文档完整性
 
 #### 增量更新模式
 
+**阶段 1：识别变更范围**
+
 1. **读取现有文档**：解析当前 `project-info.md` 内容
-2. **识别变更范围**：根据 Git 变更文件路径确定影响的章节
-3. **局部更新**：仅重新扫描变更涉及的模块，保留未变更章节
-4. **更新时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，严禁自行编造时间
-5. **写入更新**：覆盖原文件
+2. **识别变更模块**：根据 Git 变更文件路径确定影响的章节
+
+**阶段 2：按需扫描更新**
+
+仅重新扫描变更涉及的模块，**每扫描完一个模块立即 Edit 更新对应章节**：
+
+```bash
+# 获取当前分支与 master 分支的变更文件列表
+git diff master...HEAD --name-only
+```
+
+**变更文件路径与章节对应**：
+
+| 变更路径 | 需更新的章节 |
+|----------|--------------|
+| `**/controller/**/*.java` | Controller 层 |
+| `**/service/**/*.java` | Service 层 |
+| `**/mapper/**/*.java` | Mapper 层 |
+| `**/entity/**/*.java` | Entity 实体类 |
+| `**/feign/**/*.java` | Feign 客户端 |
+| `**/cache/**/*.java` | Cache 缓存层 |
+| `**/task/**/*.java` | Task 定时任务 |
+| `**/aop/**/*.java` | AOP 切面 |
+| `**/consumer/**/*.java` | 消息中间件 |
+| `**/config/**/*.java` | Config 配置类 |
+
+**阶段 3：收尾**
+
+1. **更新时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，严禁自行编造时间
 
 **增量扫描命令**：
 
@@ -489,10 +566,19 @@ Read: bootstrap.yml   -> 提取 Spring Cloud 配置
 
 ## 注意事项
 
-1. **Feign 接口提取**：必须读取接口文件内容，不能仅通过文件名推断
-2. **路径拼接**：Feign 接口完整路径 = `@FeignClient.path` + `@XxxMapping.value`
-3. **泛型解析**：返回类型需要解析泛型参数，如 `Result<OmsWaybillDetailVO>` 中的 `OmsWaybillDetailVO`
-4. **章节删除**：如果项目没有某个模块，需要删除对应章节并调整编号
-5. **时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，格式为 `YYYY-MM-DD HH:mm:ss`，严禁自行编造时间
+1. **分阶段串行执行（重要）**：
+   - ✅ **扫描一个，填充一个**：每完成一个模块扫描，立即 Edit 文档填充对应章节
+   - ❌ **禁止批量扫描后统一写入**：这会导致上下文过长，信息遗漏或错误
+   - 使用 `Edit` 工具增量更新文档，而非 `Write` 全量覆盖
+
+2. **Feign 接口提取**：必须读取接口文件内容，不能仅通过文件名推断
+
+3. **路径拼接**：Feign 接口完整路径 = `@FeignClient.path` + `@XxxMapping.value`
+
+4. **泛型解析**：返回类型需要解析泛型参数，如 `Result<OmsWaybillDetailVO>` 中的 `OmsWaybillDetailVO`
+
+5. **章节删除**：如果项目没有某个模块，需要删除对应章节
+
+6. **时间戳**：**必须**通过 Bash 执行 `date '+%Y-%m-%d %H:%M:%S'` 获取当前系统时间，格式为 `YYYY-MM-DD HH:mm:ss`，严禁自行编造时间
 
 ---
