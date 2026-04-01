@@ -15,6 +15,7 @@ description: Generates Java unit tests for Spring Boot projects following Alibab
 
 - **Spring Boot 2.2.x+**：仅用 JUnit 5（`org.junit.jupiter.api`），注解用 `@Test` / `@BeforeEach` / `@AfterEach`。
 - **Spring Boot 2.2.x-**：仅用 JUnit 4（`org.junit.Test`），注解用 `@Test` / `@Before` / `@After`。
+- 使用 java 8+ 日期时间 API
 - 禁止混用 JUnit 4/5；优先 JUnit 5。
 - 依赖：优先 `spring-boot-starter-test`；未集成时在 POM 中补充 JUnit 与 Mockito，版本与 Spring Boot 匹配。
 - 断言：优先 AssertJ；简单场景可用 JUnit 原生断言；禁止混用多种断言风格。
