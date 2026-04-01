@@ -267,50 +267,75 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.9 Listener 消息监听器
+### 3.6 消息中间件
 
-| 监听器类 | 消息源 | 功能 |
-|----------|--------|------|
-| {{Listener1}} | {{消息源1}} | {{功能描述}} |
-| {{Listener2}} | {{消息源2}} | {{功能描述}} |
+> **说明**：项目中可能同时存在 Spring Cloud Stream 和 RocketMQ 两种消息中间件，根据实际扫描结果生成对应章节。
 
----
+#### 3.6.1 Spring Cloud Stream（如存在）
 
-### 3.10 Stream 消息流
-
-#### 3.10.1 概述
-
-项目使用 **Spring Cloud Stream** + **RabbitMQ** 实现消息驱动。具体 Topic 配置通过 **Apollo 配置中心** 管理。
+**概述**：项目使用 **Spring Cloud Stream** 实现消息驱动，具体 Topic 配置通过 **Apollo 配置中心** 管理。
 
 | 配置项 | 说明 |
 |--------|------|
 | 框架 | Spring Cloud Stream |
-| 消息队列 | RabbitMQ |
+| 消息队列 | {{RabbitMQ/RocketMQ}} |
 | 配置管理 | Apollo |
 | 生产者接口 | `OutputInterface.java` |
 | 消费者接口 | `InputInterface.java` |
-| 消息发送服务 | `MessageProducer.java` |
-| 消息接收服务 | `MessageReceiver.java` |
+
+**Output（消息生产）配置**：
+
+| Channel 名称 | Destination | 方法 | 消息类型 | 说明 |
+|--------------|-------------|------|----------|------|
+| {{channel-name-output}} | {{destination-name}} | `methodName()` | `MessageDTO` | {{消息说明}} |
+
+**Input（消息消费）配置**：
+
+| Channel 名称 | Destination | Group | 方法 | 消息类型 | 处理逻辑 | 说明 |
+|--------------|-------------|-------|------|----------|----------|------|
+| {{channel-name-input}} | {{destination-name}} | {{group-name}} | `methodName()` | `MessageDTO` | `service.method()` | {{消息说明}} |
+
+#### 3.6.2 RocketMQ（如存在）
+
+**概述**：项目使用 **RocketMQ** 实现消息收发，可能使用 `spring-boot-starter-rocketmq` 或 `yl-sqs-platform-rocketmq`。
+
+| 配置项 | 说明 |
+|--------|------|
+| 框架 | RocketMQ |
+| Starter | {{spring-boot-starter-rocketmq / yl-sqs-platform-rocketmq}} |
+| Name Server | 从配置文件获取 |
+
+**Topic 生产者（标准模式）**：
+
+| Topic 名称 | Tag | 生产者类 | 消息类型 | 说明 |
+|------------|-----|----------|----------|------|
+| {{topic-name-1}} | {{tag-name}} | `{{ProducerClass}}` | `{{MessageDTO}}` | {{发送场景说明}} |
+| {{topic-name-2}} | {{tag-name}} | `{{ProducerClass}}` | `{{MessageDTO}}` | {{发送场景说明}} |
+
+**Topic 动态发布器（如存在）**：
+
+| Topic 名称 | Tag | 发布器类 | 调用位置 | 消息类型 | 说明 |
+|------------|-----|----------|----------|----------|------|
+| {{topic-name-1}} | {{tag-name}} | `RocketMQDynamicPublisher` | `{{ServiceClass.methodName()}}` | `{{MessageDTO}}` | {{发送场景说明}} |
+| {{topic-name-2}} | {{tag-name}} | `RocketMQDynamicPublisher` | `{{ServiceClass.methodName()}}` | `{{MessageDTO}}` | {{发送场景说明}} |
+
+**Topic 消费者（标准模式）**：
+
+| Topic 名称 | 消费者类 | 消息类型 | 消费模式 | 说明 |
+|------------|----------|----------|----------|------|
+| {{topic-name-1}} | `{{ConsumerClass}}` | `{{MessageDTO}}` | 集群/广播 | {{消费场景说明}} |
+| {{topic-name-2}} | `{{ConsumerClass}}` | `{{MessageDTO}}` | 集群/广播 | {{消费场景说明}} |
+
+**Topic 动态监听器（如存在）**：
+
+| Topic 名称 | 消费者类 | 注解 | 消息类型 | 消费模式 | 说明 |
+|------------|----------|------|----------|----------|------|
+| {{topic-name-1}} | `{{ConsumerClass}}` | `@RocketMQDynamicListener` | `{{MessageDTO}}` | 集群/广播 | {{消费场景说明}} |
+| {{topic-name-2}} | `{{ConsumerClass}}` | `@RocketMQDynamicListener` | `{{MessageDTO}}` | 集群/广播 | {{消费场景说明}} |
 
 ---
 
-#### 3.10.2 Output（消息生产）配置
-
-| Channel 名称 | 方法 | 消息类型 | 说明 |
-|--------------|------|----------|------|
-| {{channel-name-output}} | `methodName()` | `MessageDTO` | {{消息说明}} |
-
----
-
-#### 3.10.3 Input（消息消费）配置
-
-| Channel 名称 | 方法 | 消息类型 | 处理逻辑 | 说明 |
-|--------------|------|----------|----------|------|
-| {{channel-name-input}} | `methodName()` | `MessageDTO` | `service.method()` | {{消息说明}} |
-
----
-
-### 3.11 Config 配置类
+### 3.7 Config 配置类
 
 | 配置类 | 功能 | 主要配置项 |
 |--------|------|------------|

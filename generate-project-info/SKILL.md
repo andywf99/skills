@@ -50,11 +50,14 @@ Glob pattern: project-info.md
 **增量扫描命令**：
 
 ```bash
-# 获取指定时间后的变更文件
-git log --since="<上次更新时间>" --name-only --pretty=format:
+# 获取当前分支与 master 分支的差异 commits
+git log master..HEAD --oneline
 
-# 或对比特定 commit
-git diff <last-commit> --name-only
+# 获取当前分支与 master 分支的变更文件列表
+git diff master...HEAD --name-only
+
+# 获取变更文件及状态（新增/修改/删除）
+git diff master...HEAD --name-status
 ```
 
 **章节与扫描路径对应关系**：
@@ -68,10 +71,9 @@ git diff <last-commit> --name-only
 | 3.5 | Feign 客户端 | `**/feign/**/*.java` |
 | 3.6 | Cache 缓存层 | `**/cache/**/*.java` |
 | 3.7 | Task 定时任务 | `**/task/**/*.java` |
-| 3.8 | AOP 切面 | `**/aop/**/*.java` |
-| 3.9 | Listener 消息监听 | `**/listener/**/*.java` |
-| 3.10 | Stream 消息流 | `**/stream/**/*.java` |
-| 3.11 | Config 配置类 | `**/config/**/*.java` |
+| 3.8 | 消息中间件 | `**/stream/**/*.java`, `**/consumer/**/*.java`, `**/producer/**/*.java` |
+| 3.9 | AOP 切面 | `**/aop/**/*.java` |
+| 3.10 | Config 配置类 | `**/config/**/*.java` |
 
 ---
 
@@ -325,16 +327,26 @@ Glob pattern: **/aspect/**/*.java
 
 **提取信息**：切面类、注解、功能、应用场景
 
-#### 6.4 Listener 消息监听（对应模板 3.9）
+#### 6.4 消息中间件（对应模板 3.6）
+
+项目中可能同时存在 **Spring Cloud Stream** 和 **RocketMQ** 两种消息中间件用法，需要分别扫描。
+
+##### 6.4.1 检测消息中间件类型
 
 ```
-Glob pattern: **/listener/**/*.java
-Glob pattern: **/consumer/**/*.java
+# 检测 Spring Cloud Stream
+Glob pattern: **/stream/**/*.java
+Grep pattern: @Input|@Output|InputInterface|OutputInterface|MessageProducer|MessageReceiver
+
+# 检测 RocketMQ（标准模式）
+Grep pattern: @RocketMQMessageListener|RocketMQTemplate|DefaultMQProducer|DefaultMQPushConsumer
+Grep pattern: yl-sqs-platform-rocketmq|RocketMQProducer|RocketMQConsumer
+
+# 检测 RocketMQ（动态模式）
+Grep pattern: @RocketMQDynamicListener|RocketMQDynamicPublisher
 ```
 
-**提取信息**：监听器类、消息源、功能
-
-#### 6.5 Stream 消息流（对应模板 3.10）
+##### 6.4.2 Spring Cloud Stream 扫描
 
 ```
 Glob pattern: **/stream/**/*.java
@@ -358,7 +370,59 @@ Glob pattern: **/stream/**/*.java
 |--------------|------|----------|----------|------|
 | `channel-name-input` | `methodName()` | `MessageDTO` | `service.method()` | 消息说明 |
 
-#### 6.6 Config 配置类（对应模板 3.11）
+##### 6.4.3 RocketMQ 扫描
+
+```
+# 扫描生产者（标准模式）
+Grep pattern: RocketMQTemplate|DefaultMQProducer|RocketMQProducer
+Glob pattern: **/producer/**/*.java
+Glob pattern: **/mq/**/*.java
+
+# 扫描消费者（标准模式）
+Grep pattern: @RocketMQMessageListener
+Glob pattern: **/consumer/**/*.java
+Glob pattern: **/listener/**/*.java
+
+# 扫描生产者（动态模式）
+Grep pattern: RocketMQDynamicPublisher
+Grep pattern: -A 5 -B 5 RocketMQDynamicPublisher  # 查找调用位置上下文
+
+# 扫描消费者（动态模式）
+Grep pattern: @RocketMQDynamicListener
+```
+
+**关键提取**：
+1. **Topic 信息**：从 `@RocketMQMessageListener` 或 `@RocketMQDynamicListener` 注解提取 topic
+2. **生产者信息**：识别 `RocketMQTemplate`、`DefaultMQProducer` 或 `RocketMQDynamicPublisher` 的使用位置
+3. **消息类型**：提取发送/消费的消息 DTO 类型
+4. **消费模式**：识别集群消费还是广播消费
+5. **动态发布器调用位置**：通过 `RocketMQDynamicPublisher` 的 grep 结果定位具体调用点，提取调用方法名、所在类名
+
+**RocketMQ 生产者表格格式**：
+
+| Topic 名称 | Tag | 生产者类 | 消息类型 | 说明 |
+|------------|-----|----------|----------|------|
+| `topic-name` | `tag-name` | `ProducerClass` | `MessageDTO` | 发送场景说明 |
+
+**RocketMQ 动态发布器表格格式**：
+
+| Topic 名称 | Tag | 发布器类 | 调用位置 | 消息类型 | 说明 |
+|------------|-----|----------|----------|----------|------|
+| `topic-name` | `tag-name` | `RocketMQDynamicPublisher` | `ServiceClass.methodName()` | `MessageDTO` | 发送场景说明 |
+
+**RocketMQ 消费者表格格式**：
+
+| Topic 名称 | 消费者类 | 消息类型 | 消费模式 | 说明 |
+|------------|----------|----------|----------|------|
+| `topic-name` | `ConsumerClass` | `MessageDTO` | 集群/广播 | 消费场景说明 |
+
+**RocketMQ 动态监听器表格格式**：
+
+| Topic 名称 | 消费者类 | 注解 | 消息类型 | 消费模式 | 说明 |
+|------------|----------|------|----------|----------|------|
+| `topic-name` | `ConsumerClass` | `@RocketMQDynamicListener` | `MessageDTO` | 集群/广播 | 消费场景说明 |
+
+#### 6.5 AOP 切面（对应模板 3.7）
 
 ```
 Glob pattern: **/config/**/*.java
