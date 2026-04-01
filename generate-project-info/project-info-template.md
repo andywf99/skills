@@ -173,23 +173,62 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.4 Feign 客户端 (远程服务调用)
+### 3.4 Entity 实体类
 
-#### 3.4.1 {{服务1名称}} (`{{FeignClient1}}`)
+#### 3.4.1 基础实体类
+
+{{扫描项目中的基础实体类（通常以 Base、Abstract、Generic 开头或位于 common/base 包下），列出继承关系和公共字段}}
+
+| 实体类 | 表名 | 说明 | 继承关系 |
+|--------|------|------|----------|
+| `{{BaseEntity1}}` | - | {{基础实体说明}} | `{{父类}}` |
+| `{{BaseEntity2}}` | - | {{基础实体说明}} | `{{父类}}` |
+
+**{{BaseEntity1}} 字段说明**
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| {{字段名}} | {{类型}} | {{说明}} |
+
+> 💡 **说明**：不同项目的基础实体类可能不同，常见模式包括：
+> - MyBatis-Plus: `BaseEntity` 继承 `Model<T>`
+> - JPA: `BaseEntity` 使用 `@MappedSuperclass`
+> - 自定义: `BaseId` → `BaseEntity` → `Base` 三层继承
+> - 无基础类: 所有实体独立定义字段
+
+---
+
+#### 3.4.2 业务实体类
+
+{{按业务模块分类列出实体类，每个实体包含字段名、类型、说明}}
+
+##### EntityName (表名: {{table_name}})
+
+{{实体说明/功能描述}}
+
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| {{字段名}} | {{类型}} | {{说明}} |
+
+---
+
+### 3.5 Feign 客户端 (远程服务调用)
+
+#### 3.5.1 {{服务1名称}} (`{{FeignClient1}}`)
 
 | 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
 |----------|-----------|----------|-----------|
 | `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
 | `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
 
-#### 3.4.2 {{服务2名称}} (`{{FeignClient2}}`)
+#### 3.5.2 {{服务2名称}} (`{{FeignClient2}}`)
 
 | 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
 |----------|-----------|----------|-----------|
 | `{{/api/path1}}` | POST | {{接口说明}} | 入参: `{{DTO}}`, 返回: `{{VO}}` |
 | `{{/api/path2}}` | GET | {{接口说明}} | 入参: `{{param}}`, 返回: `{{VO}}` |
 
-#### 3.4.3 {{服务3名称}} (`{{FeignClient3}}`)
+#### 3.5.3 {{服务3名称}} (`{{FeignClient3}}`)
 
 | 接口路径 | HTTP 方法 | 接口说明 | 参数/返回 |
 |----------|-----------|----------|-----------|
@@ -198,7 +237,7 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.5 Cache 缓存层
+### 3.6 Cache 缓存层
 
 | 缓存类 | Redis Key 前缀 | 功能 | 过期策略 |
 |--------|----------------|------|----------|
@@ -208,23 +247,13 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
-### 3.6 Task 定时任务
+### 3.7 Task 定时任务
 
 | 任务类 | Cron 表达式 | 功能 |
 |--------|-------------|------|
 | `{{Task1}}` | {{cron表达式}} | {{功能描述}} |
 | `{{Task2}}` | {{cron表达式}} | {{功能描述}} |
 | `{{Task3}}` | {{cron表达式}} | {{功能描述}} |
-
----
-
-### 3.7 WebSocket 模块
-
-| 类名 | 功能 | 消息类型 |
-|------|------|----------|
-| `{{WebSocketConfig}}` | WebSocket 配置 | - |
-| `{{Handler1}}` | {{功能描述}} | {{消息类型}} |
-| `{{Handler2}}` | {{功能描述}} | {{消息类型}} |
 
 ---
 
@@ -249,10 +278,45 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ### 3.10 Stream 消息流
 
-| Stream 类 | Channel | 功能 |
-|-----------|---------|------|
-| {{Stream1}} | {{Channel1}} | {{功能描述}} |
-| {{Stream2}} | {{Channel2}} | {{功能描述}} |
+#### 3.10.1 概述
+
+项目使用 **Spring Cloud Stream** + **RabbitMQ** 实现消息驱动。具体 Topic 配置通过 **Apollo 配置中心** 管理。
+
+| 配置项 | 说明 |
+|--------|------|
+| 框架 | Spring Cloud Stream |
+| 消息队列 | RabbitMQ |
+| 配置管理 | Apollo |
+| 生产者接口 | `OutputInterface.java` |
+| 消费者接口 | `InputInterface.java` |
+| 消息发送服务 | `MessageProducer.java` |
+| 消息接收服务 | `MessageReceiver.java` |
+
+---
+
+#### 3.10.2 Output（消息生产）配置
+
+| Channel 名称 | 方法 | 消息类型 | 说明 |
+|--------------|------|----------|------|
+| {{channel-name-output}} | `methodName()` | `MessageDTO` | {{消息说明}} |
+
+---
+
+#### 3.10.3 Input（消息消费）配置
+
+| Channel 名称 | 方法 | 消息类型 | 处理逻辑 | 说明 |
+|--------------|------|----------|----------|------|
+| {{channel-name-input}} | `methodName()` | `MessageDTO` | `service.method()` | {{消息说明}} |
+
+---
+
+### 3.11 Config 配置类
+
+| 配置类 | 功能 | 主要配置项 |
+|--------|------|------------|
+| `{{Config1}}` | {{功能描述}} | {{主要配置项}} |
+| `{{Config2}}` | {{功能描述}} | {{主要配置项}} |
+| `{{Config3}}` | {{功能描述}} | {{主要配置项}} |
 
 ---
 
