@@ -61,9 +61,28 @@ Glob pattern: project-info.md
 4. 扫描 `src/main/java` 包结构，生成"模块架构图"
 5. 生成只包含骨架的 `project-info.md`（章节标题已确定，内容待填充）
 
-**阶段 2：逐模块扫描填充**
+**阶段 2：逐模块扫描填充（核心执行流程）**
 
-按以下顺序依次扫描，**每完成一个模块立即 Edit 文档填充对应章节**：
+> ⚠️ **强制要求**：必须严格按照以下流程执行，禁止跳过或合并步骤！
+
+**执行伪代码**：
+
+```
+FOR EACH 模块 IN [Controller, Service, Mapper, Entity, Feign, Cache, Task, AOP, MQ, Config]:
+    # 步骤A: 仅扫描当前模块
+    Glob/Grep 扫描该模块的文件列表
+
+    # 步骤B: 读取必要的文件内容
+    Read 需要详细分析的文件
+
+    # 步骤C: 立即填充文档（关键！）
+    Edit project-info.md 填充该模块对应章节
+
+    # 步骤D: 清空上下文，继续下一个模块
+    （进入下一轮循环，之前的扫描结果不再保留）
+```
+
+**扫描顺序与命令**：
 
 | 序号 | 模块 | 扫描命令 | 填充章节 |
 |------|------|----------|----------|
@@ -78,10 +97,15 @@ Glob pattern: project-info.md
 | 9 | MQ | `Grep RocketMQ\|Stream` | 消息中间件 |
 | 10 | Config | `Glob **/config/**/*.java` | Config 配置类 |
 
-**关键原则**：
-- ✅ **扫描一个，填充一个**：不要等所有模块扫描完再统一写入
-- ✅ **用 Edit 而非 Write**：每次只更新对应章节，保留其他章节内容
-- ✅ **删除空章节**：如果模块不存在，直接删除对应章节
+**❌ 禁止的做法**：
+- ❌ 一次性 Glob 所有模块，再统一处理
+- ❌ 把所有扫描结果存在变量里，最后一次性 Write
+- ❌ 跳过某个模块，留到最后补填
+
+**✅ 正确的做法**：
+- ✅ 每扫描完一个模块，**立即**调用 Edit 更新文档
+- ✅ Edit 完成后，再开始下一个模块的扫描
+- ✅ 如果模块不存在（Glob 结果为空），直接跳过或删除该章节
 
 **阶段 3：收尾**
 
@@ -156,7 +180,15 @@ git diff master...HEAD --name-status
 
 ---
 
-### 步骤 2：识别项目架构模式
+## 模块扫描方法参考
+
+> ⚠️ **重要**：以下章节仅作为各模块的扫描方法参考，**不是独立执行步骤**！
+>
+> 实际执行时，应严格按照"步骤1"中"阶段2"的流程：**扫描一个模块 → 立即 Edit 填充 → 再扫描下一个模块**
+
+---
+
+### 2.1 项目架构识别
 
 扫描 `src/main/java` 下的包结构：
 
@@ -173,9 +205,9 @@ Glob pattern: src/main/java/**/*
 
 ---
 
-### 步骤 3：生成模块架构图
+### 2.2 模块架构图生成
 
-**模块架构图必须根据实际扫描结果动态生成，不使用固定模板。**
+> ⚠️ **注意**：本节仅为架构图生成方法参考，实际执行时按"步骤1-阶段2"的流程进行。
 
 #### 生成步骤
 
@@ -217,9 +249,11 @@ src/main/java/com/jt/project/
 
 ---
 
-### 步骤 4：扫描核心分层组件
+### 2.3 核心分层组件扫描
 
-#### 4.1 Controller 层
+> ⚠️ **注意**：本节仅为各层扫描方法参考，实际执行时按"步骤1-阶段2"的流程进行。
+
+#### Controller 层
 
 ```
 Glob pattern: **/controller/**/*.java
@@ -232,7 +266,7 @@ Glob pattern: **/interfaces/**/*.java
 - `@RequestMapping` 路径前缀
 - 主要方法（`@GetMapping`/`@PostMapping` 等）
 
-#### 4.2 Service 层
+#### Service 层
 
 ```
 Glob pattern: **/service/**/*.java
@@ -244,7 +278,7 @@ Glob pattern: **/application/**/*.java
 - 主要方法名
 - 子模块划分（如 `knowledge/`、`process/` 等）
 
-#### 4.3 Mapper 层
+#### Mapper 层
 
 ```
 Glob pattern: **/mapper/**/*.java
@@ -259,9 +293,11 @@ Glob pattern: **/repository/**/*.java
 
 ---
 
-### 步骤 5：扫描数据模型
+### 2.4 数据模型扫描
 
-#### 5.1 Entity 实体类
+> ⚠️ **注意**：本节仅为数据模型扫描方法参考，实际执行时按"步骤1-阶段2"的流程进行。
+
+#### Entity 实体类
 
 ```
 Glob pattern: **/model/entity/**/*.java
@@ -303,7 +339,7 @@ Glob pattern: **/pojo/**/*.java
 | `field2` | `Integer` | 字段2说明 |
 ```
 
-#### 5.2 DTO/VO 类
+#### DTO/VO 类
 
 ```
 Glob pattern: **/dto/**/*.java
@@ -319,9 +355,11 @@ Glob pattern: **/response/**/*.java
 
 ---
 
-### 步骤 6：扫描外部依赖
+### 2.5 外部依赖扫描
 
-#### 6.1 Feign 客户端
+> ⚠️ **注意**：本节仅为外部依赖扫描方法参考，实际执行时按"步骤1-阶段2"的流程进行。
+
+#### Feign 客户端
 
 ```
 Glob pattern: **/feign/**/*.java
