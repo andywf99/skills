@@ -52,6 +52,7 @@ triggers:
 5. Claude 读取转换后的 Markdown 文件
 
 **注意事项**：
+- 仅执行脚本即可，不需要调整 [word2md_cli.py](scripts/word2md_cli.py) 中的代码逻辑
 - 转换后检查图片是否正确提取到 `assets` 目录
 - 检查表格、列表等格式是否正确
 - 如有格式问题，手动调整或提醒用户
