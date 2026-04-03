@@ -31,7 +31,8 @@ description: 扫描 Java 项目结构，根据模板生成项目框架文档（p
          ├── Entity 实体类 → 填充 Entity 章节
          ├── Feign 客户端 → 填充 Feign 章节
          ├── Cache/Task/AOP → 填充对应章节
-         └── 消息中间件 → 填充消息章节
+         ├── 消息中间件 → 填充消息章节
+         └── Elasticsearch → 填充 ES 搜索引擎章节
          ↓
 阶段3: 收尾 → 更新时间戳、验证完整性
 ```
@@ -95,7 +96,8 @@ FOR EACH 模块 IN [Controller, Service, Mapper, Entity, Feign, Cache, Task, AOP
 | 7 | Task | `Glob **/task/**/*.java` | Task 定时任务 |
 | 8 | AOP | `Glob **/aop/**/*.java` | AOP 切面 |
 | 9 | MQ | `Grep RocketMQ\|Stream` | 消息中间件 |
-| 10 | Config | `Glob **/config/**/*.java` | Config 配置类 |
+| 10 | Elasticsearch | `Grep RestHighLevelClient\|ElasticsearchTemplate` | Elasticsearch 搜索引擎 |
+| 11 | Config | `Glob **/config/**/*.java` | Config 配置类 |
 
 **❌ 禁止的做法**：
 - ❌ 一次性 Glob 所有模块，再统一处理
@@ -142,6 +144,7 @@ git diff master...HEAD --name-only
 | `**/task/**/*.java` | Task 定时任务 |
 | `**/aop/**/*.java` | AOP 切面 |
 | `**/consumer/**/*.java` | 消息中间件 |
+| `**/constants/**/*Index*.java` | Elasticsearch 搜索引擎 |
 | `**/config/**/*.java` | Config 配置类 |
 
 **阶段 3：收尾**
@@ -176,6 +179,7 @@ git diff master...HEAD --name-status
 | Task 定时任务 | `**/task/**/*.java` |
 | AOP 切面 | `**/aop/**/*.java` |
 | 消息中间件 | `**/stream/**/*.java`, `**/consumer/**/*.java`, `**/producer/**/*.java` |
+| Elasticsearch 搜索引擎 | `**/constants/**/*Index*.java`, `**/utils/**/ES*.java` |
 | Config 配置类 | `**/config/**/*.java` |
 
 ---
@@ -538,6 +542,53 @@ Grep pattern: @RocketMQDynamicListener
 | Topic 名称 | 消费者类 | 注解 | 消息类型 | 消费模式 | 说明 |
 |------------|----------|------|----------|----------|------|
 | `topic-name` | `ConsumerClass` | `@RocketMQDynamicListener` | `MessageDTO` | 集群/广播 | 消费场景说明 |
+
+#### 7.4.4 Elasticsearch 扫描
+
+```
+# 检测 Elasticsearch 使用
+Grep pattern: RestHighLevelClient|ElasticsearchTemplate|@Document|@Index|elasticsearch
+Glob pattern: **/constants/**/*Index*.java
+Glob pattern: **/utils/**/ES*.java
+```
+
+**关键提取**：
+
+1. **识别索引常量类**：
+   - 扫描 `constants/` 包下的索引定义类（如 `ESIndex.java`）
+   - 提取索引名称常量（`String INDEX_NAME = "index_name"`）
+   - 识别索引用途（通过常量命名和注释推断）
+
+2. **识别 ES 工具类**：
+   - 扫描 `utils/` 包下的 ES 相关工具类
+   - 提取文档操作类（`ESDocHolder`、`ESDocumentHelper` 等）
+   - 提取搜索查询类（`ESSearchHolder`、`ESSearchHelper` 等）
+
+3. **提取索引信息**：
+   - 索引名称、常量定义、用途说明
+   - 索引模式（单索引/按时间分索引）
+   - 数据来源（通过查找 `index()`、`update()` 等方法的调用位置）
+
+4. **Elasticsearch 文档格式**：
+
+```markdown
+### Elasticsearch 搜索引擎
+
+**概述**：项目使用 **Elasticsearch** 实现数据搜索和分析，主要用于{{主要用途}}。
+
+| 配置项 | 说明 |
+|--------|------|
+| 框架 | Elasticsearch {{版本号}} |
+| 客户端类 | `RestHighLevelClient` |
+| 工具类 | `{{ESDocHolder}}` (文档操作), `{{ESSearchHolder}}` (搜索查询) |
+
+#### 索引信息
+
+| 索引名称 | 常量定义 | 用途 | 索引模式 |
+|----------|----------|------|----------|
+| {{index-name-1}} | `{{INDEX_CONSTANT_1}}` | {{索引用途}} | 单索引/按月分索引 |
+| {{index-name-2}} | `{{INDEX_CONSTANT_2}}` | {{索引用途}} | 单索引/按月分索引 |
+```
 
 #### 7.5 Config 配置类
 

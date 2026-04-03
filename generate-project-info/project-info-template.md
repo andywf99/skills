@@ -335,6 +335,26 @@ HTTP Request -> Controller -> Application Service -> Domain Service -> Repositor
 
 ---
 
+### Elasticsearch 搜索引擎（如存在）
+
+**概述**：项目使用 **Elasticsearch** 实现数据搜索和分析，主要用于{{主要用途}}。
+
+| 配置项 | 说明 |
+|--------|------|
+| 框架 | Elasticsearch {{版本号}} |
+| 客户端类 | `RestHighLevelClient` |
+| 工具类 | `{{ESDocHolder}}` (文档操作), `{{ESSearchHolder}}` (搜索查询) |
+
+#### 索引信息
+
+| 索引名称 | 常量定义 | 用途 | 索引模式 |
+|----------|----------|------|----------|
+| {{index-name-1}} | `{{INDEX_CONSTANT_1}}` | {{索引用途}} | 单索引/按月分索引 |
+| {{index-name-2}} | `{{INDEX_CONSTANT_2}}` | {{索引用途}} | 单索引/按月分索引 |
+| {{index-name-3}} | `{{INDEX_CONSTANT_3}}` | {{索引用途}} | 单索引/按月分索引 |
+
+---
+
 ### Config 配置类
 
 | 配置类 | 功能 | 主要配置项 |
