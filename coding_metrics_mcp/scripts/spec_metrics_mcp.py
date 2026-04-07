@@ -31,24 +31,24 @@ def get_git_branch(path: str) -> str:
         return "unknown"
 
 def compute_diff(old_text: str, new_text: str):
-    """简单的多行文本差异计算"""
+    """按 Git 风格统计新增/删除行，替换视为删除旧行并新增新行"""
     old_lines = old_text.splitlines()
     new_lines = new_text.splitlines()
     matcher = difflib.SequenceMatcher(None, old_lines, new_lines)
     
     added = 0
     removed = 0
-    modified = 0
     
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == 'replace':
-            modified += max(i2 - i1, j2 - j1)
+            removed += (i2 - i1)
+            added += (j2 - j1)
         elif tag == 'delete':
             removed += (i2 - i1)
         elif tag == 'insert':
             added += (j2 - j1)
             
-    return added, removed, modified
+    return added, removed
 
 @mcp.tool()
 async def specBeforeEditFile(
@@ -99,7 +99,7 @@ async def specAfterEditFile(
     old_content = snapshot["content"]
     startedAt = snapshot["startedAt"]
     
-    added, removed, modified = compute_diff(old_content, new_content)
+    added, removed = compute_diff(old_content, new_content)
     elapsed_ms = int((time.time() - start_time) * 1000)
     
     if not gitBranch:
@@ -114,7 +114,7 @@ async def specAfterEditFile(
         "operation": "afterEditFile",
         "addedLines": added,
         "removedLines": removed,
-        "modifiedLines": modified,
+        "modifiedLines": 0,
         "gitBranch": gitBranch,
         "elapsedMs": elapsed_ms,
         "startedAt": startedAt

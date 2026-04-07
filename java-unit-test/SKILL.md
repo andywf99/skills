@@ -13,9 +13,8 @@ description: Generates Java unit tests for Spring Boot projects following Alibab
 
 ### 框架与依赖
 
-- **Spring Boot 2.2.x+**：仅用 JUnit 5（`org.junit.jupiter.api`），注解用 `@Test` / `@BeforeEach` / `@AfterEach`。
-- **Spring Boot 2.2.x-**：仅用 JUnit 4（`org.junit.Test`），注解用 `@Test` / `@Before` / `@After`。
-- 禁止混用 JUnit 4/5；优先 JUnit 5。
+- 仅用 JUnit 4（`org.junit.Test`），注解用 `@Test` / `@Before` / `@After`，禁止 JUnit 5。
+- 使用 java 8+ 日期时间 API
 - 依赖：优先 `spring-boot-starter-test`；未集成时在 POM 中补充 JUnit 与 Mockito，版本与 Spring Boot 匹配。
 - 断言：优先 AssertJ；简单场景可用 JUnit 原生断言；禁止混用多种断言风格。
 
@@ -464,7 +463,38 @@ void test_onMessage_nullOrderId_processOrderNotCalled() {
 - 变更代码：行覆盖率 ≥ 90%，分支覆盖率 ≥ 85%。
 - 覆盖所有分支（if/else、异常），禁止空测试或无断言凑覆盖率。
 - 未集成 JaCoCo 时：在 POM 中生成 JaCoCo 插件配置（如版本 0.8.7），并输出增量覆盖率报告说明。
-
+   ```
+   <plugin>
+                   <groupId>org.jacoco</groupId>
+                   <artifactId>jacoco-maven-plugin</artifactId>
+                   <version>0.8.7</version>
+                   <executions>
+                       <execution>
+                           <id>jacoco-initialize</id>
+                           <goals>
+                               <goal>prepare-agent</goal>
+                           </goals>
+                       </execution>
+                       <execution>
+                           <id>jacoco-site</id>
+                           <phase>test</phase>
+                           <goals>
+                               <goal>report</goal>
+                           </goals>
+                           <configuration>
+                               <dataFile>target/jacoco.exec</dataFile>
+                               <outputDirectory>target/jacoco-ut</outputDirectory>
+                               <excludes>
+                                   <exclude>**/dto/**</exclude>
+                                   <exclude>**/vo/**</exclude>
+                                   <exclude>**/enums/**</exclude>
+                                   <exclude>**/model/**</exclude>
+                               </excludes>
+                           </configuration>
+                       </execution>
+                   </executions>
+               </plugin>
+   ```
 **生成测试后必须提供：**
 
 1. **JaCoCo 报告生成命令**（Maven 示例）：
