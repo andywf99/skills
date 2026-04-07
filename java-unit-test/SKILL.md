@@ -54,7 +54,7 @@ description: Generates Java unit tests for Spring Boot projects following Alibab
 - 优先：`@ExtendWith(MockitoExtension.class)` 纯 Mock，`@Mock` 标记依赖，`@InjectMocks` 注入被测类。
 - 强依赖 `@Value` / `@Autowired` 时：`@SpringBootTest(classes = {被测类.class})` 最小化容器，`@MockBean` 替换依赖。
 - 覆盖配置：`@TestPropertySource`。
-- 禁止 PowerMock；静态方法用 `Mockito.mockStatic()`。
+- 如果项目中有PowerMock，使用PowerMock mock静态方法；如果没有静态方法用 `Mockito.mockStatic()`。
 - **必须追加 `verify()` 验证**：当被测方法调用了 Mock 依赖时，除 `when...thenReturn` 外，必须用 `verify()` 验证依赖被以正确参数调用了正确次数；纯查询场景（只读 get）可豁免，但需注释说明原因。
 
 ```java
