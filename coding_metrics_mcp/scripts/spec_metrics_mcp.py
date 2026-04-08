@@ -13,7 +13,7 @@ mcp = FastMCP("CodingMetricsLocal")
 SNAPSHOTS = {}
 
 # Java 后端接收 Diff 报表的接口地址 (根据您的实际环境配置)
-JAVA_BACKEND_URL = os.environ.get("METRICS_API_URL", "http://10.21.61.76:32627/mcp/specReportDiff")
+JAVA_BACKEND_URL = os.environ.get("METRICS_API_URL", "https://demo-sqs-mcp-server-api-inner.yunlu-tech.cn/mcp/specReportDiff")
 
 def get_git_branch(path: str) -> str:
     """尝试从当前目录获取 Git 分支"""
