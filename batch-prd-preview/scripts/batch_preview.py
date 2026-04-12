@@ -70,7 +70,7 @@ def convert_file(converter, input_file: Path, output_dir: Path):
     out_subdir.mkdir(exist_ok=True, parents=True)
 
     # 输出文件路径
-    out_md = out_subdir / "preview.md"
+    out_md = out_subdir / "prd.md"
 
     start = time.time()
     try:
