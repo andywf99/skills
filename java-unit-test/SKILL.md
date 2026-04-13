@@ -17,6 +17,7 @@ description: Generates Java unit tests for Spring Boot projects following Alibab
 - 使用 java 8+ 日期时间 API
 - 依赖：优先 `spring-boot-starter-test`；未集成时在 POM 中补充 JUnit 与 Mockito，版本与 Spring Boot 匹配。
 - 断言：优先 AssertJ；简单场景可用 JUnit 原生断言；禁止混用多种断言风格。
+- **静态方法 Mock**：优先使用 PowerMock（`powermock-module-junit4` + `powermock-api-mockito2`），禁止使用 Mockito 3.4+ 的 `MockedStatic`（与 JDK 8/Spring Boot 2.0 不兼容）。
 
 ### 测试范围与隔离
 
@@ -54,13 +55,138 @@ description: Generates Java unit tests for Spring Boot projects following Alibab
 - 优先：`@ExtendWith(MockitoExtension.class)` 纯 Mock，`@Mock` 标记依赖，`@InjectMocks` 注入被测类。
 - 强依赖 `@Value` / `@Autowired` 时：`@SpringBootTest(classes = {被测类.class})` 最小化容器，`@MockBean` 替换依赖。
 - 覆盖配置：`@TestPropertySource`。
-- 如果项目中有PowerMock，使用PowerMock mock静态方法；如果没有静态方法用 `Mockito.mockStatic()`。
+- **静态方法 Mock 必须使用 PowerMock**：禁止使用 Mockito 3.4+ 的 `MockedStatic`，改用 `PowerMockito.mockStatic()`。
 - **必须追加 `verify()` 验证**：当被测方法调用了 Mock 依赖时，除 `when...thenReturn` 外，必须用 `verify()` 验证依赖被以正确参数调用了正确次数；纯查询场景（只读 get）可豁免，但需注释说明原因。
 
 ```java
 // 验证 save 被调用一次，且保存的金额与计算结果一致，防止业务逻辑绕过持久化
 verify(orderRepository, times(1)).save(argThat(order ->
     order.getAmount().compareTo(new BigDecimal("113.00")) == 0));
+```
+
+---
+
+### 2.1 PowerMock 静态方法 Mock 模板
+
+**使用场景**：当被测代码调用了静态方法（如 `SessionUtil.getUser()`、`OtherUserUtils.isBPO()` 等），需要使用 PowerMock 进行 Mock。
+
+**推荐 POM 依赖**（Spring Boot 2.0.x + JDK 8）：
+```xml
+<!-- PowerMock 核心依赖 -->
+<dependency>
+    <groupId>org.powermock</groupId>
+    <artifactId>powermock-module-junit4</artifactId>
+    <version>2.0.9</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.powermock</groupId>
+    <artifactId>powermock-api-mockito2</artifactId>
+    <version>2.0.9</version>
+    <scope>test</scope>
+</dependency>
+<!-- AssertJ 断言库（可选，但推荐） -->
+<dependency>
+    <groupId>org.assertj</groupId>
+    <artifactId>assertj-core</artifactId>
+    <version>3.9.1</version>
+    <scope>test</scope>
+</dependency>
+```
+
+**完整测试类模板**：
+```java
+package com.yl.jms.web.serviceonline.service.report.impl;
+
+import com.yl.jms.web.serviceonline.utils.SessionUtil;
+import com.yl.jms.web.serviceonline.model.vo.UserSessionVO;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+/**
+ * XxxService 单元测试
+ * 测试范围：commonQuery 方法（鲲鹏明细通用查询业务逻辑）
+ * 覆盖场景：正常查询参数填充、用户信息注入 paramsMap、Feign 调用透传
+ */
+@RunWith(PowerMockRunner.class)          // 使用 PowerMockRunner
+@PrepareForTest({SessionUtil.class})    // 声明需要 Mock 的静态类
+public class XxxServiceImplTest {
+
+    @Mock
+    private XxxFeignClient xxxFeignClient;
+
+    @InjectMocks
+    private XxxServiceImpl service;
+
+    @Before
+    public void setUp() {
+        // 初始化静态 mock（PowerMock 方式）
+        PowerMockito.mockStatic(SessionUtil.class);
+    }
+
+    /**
+     * 测试 commonQuery 方法 - 正常查询场景
+     * 覆盖代码行：XxxServiceImpl 第 28-37 行
+     * 验证点：paramsMap 中被注入用户字段，且 Feign 调用使用正确的参数
+     */
+    @Test
+    public void test_commonQuery_validParam_returnFeignResult() {
+        // 模拟静态方法返回值
+        UserSessionVO mockUser = new UserSessionVO();
+        mockUser.setServiceId(100L);
+        mockUser.setAccount("testUser001");
+        PowerMockito.when(SessionUtil.getUser()).thenReturn(mockUser);
+
+        Map<String, Object> paramsMap = new HashMap<>();
+        paramsMap.put("pageNum", 1);
+
+        when(xxxFeignClient.query(anyString(), any(Map.class)))
+                .thenReturn(Result.success("data"));
+
+        // 调用被测方法
+        Result<Object> actualResult = service.commonQuery("quality", paramsMap);
+
+        // 断言
+        assertThat(actualResult.isSucc()).isTrue();
+        assertThat(paramsMap).containsEntry("service_id", 100L);
+        verify(xxxFeignClient, times(1)).query(eq("quality"), eq(paramsMap));
+    }
+}
+```
+
+**PowerMock 关键点**：
+1. `@RunWith(PowerMockRunner.class)` 替代 `MockitoJUnitRunner`
+2. `@PrepareForTest({静态类.class})` 声明需要 Mock 的静态工具类
+3. `@Before` 中调用 `PowerMockito.mockStatic(静态类.class)` 初始化
+4. 测试方法中使用 `PowerMockito.when(静态类.静态方法()).thenReturn(返回值)`
+5. 不需要 `@After` 关闭 Mock（PowerMock 自动管理）
+6. 禁止使用 `MockedStatic`（Mockito 3.4+ 特性，与老版本不兼容）
+
+**常见静态类示例**：
+```java
+// SessionUtil
+PowerMockito.when(SessionUtil.getUser()).thenReturn(mockUser);
+
+// OtherUserUtils
+PowerMockito.when(OtherUserUtils.isBPO()).thenReturn(true);
+
+// GrayUtils（如需 Mock）
+PowerMockito.when(GrayUtils.isGray()).thenReturn(true);
 ```
 
 ---
@@ -517,6 +643,210 @@ void test_onMessage_nullOrderId_processOrderNotCalled() {
 
 ---
 
+## 9.1 自动运行测试与错误修复流程
+
+**生成测试后必须执行以下步骤：**
+
+### 步骤1：检测 Maven 环境
+
+首先检查系统是否已安装 Maven：
+
+```bash
+mvn -v
+```
+
+**如果 mvn 命令不存在**：使用 AskUserQuestion 询问用户 Maven 安装地址
+
+```
+请提供 Maven 安装地址（例如：C:\apache-maven-3.8.6 或 /usr/local/maven）
+```
+
+### 步骤2：运行单元测试
+
+使用以下命令运行测试：
+
+```bash
+mvn clean test
+```
+
+**可选：指定测试类运行（推荐用于快速验证）**
+
+```bash
+mvn clean test -Dtest=XxxServiceImplTest
+```
+
+### 步骤3：解析测试结果
+
+**测试通过**：继续步骤4
+
+**测试失败**：根据错误类型自动修复
+
+#### 常见错误类型与自动修复方案
+
+**错误1：编译错误 - 缺少依赖**
+
+```
+[ERROR] ... cannot find symbol: class PowerMockRunner
+```
+
+**修复方案**：在 pom.xml 中添加 PowerMock 依赖（已在第2.1节提供）
+
+**错误2：NoClassDefFoundError - 运行时类缺失**
+
+```
+java.lang.NoClassDefFoundError: org/powermock/modules/junit4/PowerMockRunner
+```
+
+**修复方案**：
+1. 检查 pom.xml 中 PowerMock 依赖的 scope 是否为 `test`
+2. 执行 `mvn clean install -DskipTests` 重新下载依赖
+3. 确认依赖版本兼容性（PowerMock 2.0.9 + Spring Boot 2.0.x）
+
+**错误3：NoSuchMethodError - 方法签名不匹配**
+
+```
+java.lang.NoSuchMethodError: org.mockito.MockedStatic.when(Ljava/util/function/Function;)
+```
+
+**修复方案**：这是 Mockito 版本冲突，检查是否混用了 `MockedStatic` 和 PowerMock，统一使用 PowerMock 处理静态方法
+
+**错误4：初始化错误 - MockStatic 未关闭**
+
+```
+The MockedStatic created by mockStatic is not thread-safe and you should not call when on multiple threads
+```
+
+**修复方案**：移除 `MockedStatic` 字段和 `@After` 中的 `close()` 调用，改用 PowerMock 的 `@Before` 初始化方式
+
+**错误5：测试失败 - 断言不匹配**
+
+```
+test_xxx_validParam_returnSuccess() failed
+Expecting: <actual> to be equal to: <expected> but was not.
+```
+
+**修复方案**：
+1. 检查 Mock 返回值是否与业务逻辑一致
+2. 检查被测方法是否被正确调用
+3. 添加调试日志或使用 `verify()` 验证调用参数
+
+**错误6：NullPointerException - Mock 未注入**
+
+```
+java.lang.NullPointerException at XxxServiceImpl.method()
+```
+
+**修复方案**：
+1. 确认 `@InjectMocks` 注解在被测类上
+2. 确认所有依赖都有 `@Mock` 注解
+3. 检查是否使用了 `@RunWith(PowerMockRunner.class)` 而非 `MockitoJUnitRunner`
+
+**错误7：测试类未被扫描 - 命名不规范**
+
+```
+No tests were executed for XxxServiceImpl.java
+```
+
+**修复方案**：确认测试类命名符合规范（`XxxTest.java`）且位于 `src/test/java` 目录下
+
+**错误8：Surefire fork 失败**
+
+```
+The forked VM terminated without properly saying goodbye
+```
+
+**修复方案**：在 pom.xml 的 `maven-surefire-plugin` 中设置 `<forkCount>0</forkCount>`
+
+### 步骤4：生成覆盖率报告（可选）
+
+测试通过后生成 JaCoCo 覆盖率报告：
+
+```bash
+mvn clean test jacoco:report
+```
+
+报告位置：`target/jacoco-ut/index.html`
+
+### 步骤5：验证覆盖率达标
+
+打开报告 HTML，确认：
+- 行覆盖率 ≥ 90%
+- 分支覆盖率 ≥ 85%
+
+---
+
+## 9.2 自动修复示例
+
+**场景：MockedStatic 与 PowerMock 混用导致错误**
+
+**错误信息**：
+```
+java.lang.NoSuchMethodError: org.mockito.Mockito.mockStatic
+```
+
+**自动修复步骤**：
+
+1. 识别错误：使用了 Mockito 3.4+ 的 `MockedStatic`，但项目依赖的是老版本 Mockito
+
+2. 修改测试类：
+```java
+// 修改前（错误）
+@RunWith(MockitoJUnitRunner.class)
+public class XxxTest {
+    private MockedStatic<SessionUtil> sessionUtilMock;
+
+    @Before
+    public void setUp() {
+        sessionUtilMock = mockStatic(SessionUtil.class);
+    }
+
+    @After
+    public void tearDown() {
+        sessionUtilMock.close();
+    }
+
+    @Test
+    public void test_xxx() {
+        sessionUtilMock.when(SessionUtil::getUser).thenReturn(mockUser);
+    }
+}
+
+// 修改后（正确）
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({SessionUtil.class})
+public class XxxTest {
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(SessionUtil.class);
+    }
+
+    @Test
+    public void test_xxx() {
+        PowerMockito.when(SessionUtil.getUser()).thenReturn(mockUser);
+    }
+}
+```
+
+3. 更新 pom.xml（如未添加）：
+```xml
+<dependency>
+    <groupId>org.powermock</groupId>
+    <artifactId>powermock-module-junit4</artifactId>
+    <version>2.0.9</version>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.powermock</groupId>
+    <artifactId>powermock-api-mockito2</artifactId>
+    <version>2.0.9</version>
+    <scope>test</scope>
+</dependency>
+```
+
+4. 重新运行测试验证修复
+
+---
+
 ## 10. 输出要求
 
 - 生成完整测试类（含全部 import），并标注测试方法对应的 Git 变更行。
@@ -578,10 +908,20 @@ assertThatThrownBy(() -> service.upload(null))
 - [ ] 仅覆盖 Git diff 变更代码，未动存量
 - [ ] 测试类/方法/变量命名符合阿里规范，方法名为 `test_xxx_场景_预期`
 - [ ] 类、方法、关键行均有中文注释且有意义
-- [ ] 使用 JUnit 5 或 4 与 Mockito 一致，无混用
+- [ ] 使用 JUnit 4 与 Mockito/PowerMock 一致，无混用
 - [ ] 已提供测试运行命令与 JaCoCo 报告生成命令
 - [ ] 已说明覆盖率是否达标（行 ≥ 90%、分支 ≥ 85%）
 - [ ] 测试可本地运行且通过，否则已给出修复方案
+- [ ] **PowerMock 检查**：静态方法 Mock 使用 PowerMock 而非 MockedStatic
+
+**自动运行与验证（新增）：**
+- [ ] 已检测 Maven 环境（`mvn -v`），如不存在已询问用户安装地址
+- [ ] 已执行 `mvn clean test` 运行单元测试
+- [ ] 如测试失败，已根据错误类型自动修复（依赖/编译/运行时/断言）
+- [ ] 修复后已重新运行测试，确认全部通过
+- [ ] 已生成 JaCoCo 覆盖率报告（`mvn clean test jacoco:report`）
+- [ ] 已验证覆盖率达标（行 ≥ 90%、分支 ≥ 85%）
+- [ ] 已提供测试报告路径（`target/jacoco-ut/index.html`）
 
 **业务语义层面（防止"能跑但没用"）：**
 - [ ] 每个测试方法只测一个逻辑点，禁止同一方法内出现多个 `assertThatThrownBy` 或多组参数
@@ -592,6 +932,9 @@ assertThatThrownBy(() -> service.upload(null))
 - [ ] null、空串、纯空白三种边界是否各自有独立测试方法
 - [ ] BigDecimal 计算是否有会触发舍入的用例，且使用 `isEqualByComparingTo()` 而非 `isEqualTo()`
 - [ ] 每个 `throw` 语句是否有至少一个独立测试方法对应
+- [ ] **PowerMock 使用**：静态方法 Mock 使用 `PowerMockito.when(类.方法())` 而非 `mockStatic().when(类::方法)`
+- [ ] **PowerMock 配置**：测试类有 `@RunWith(PowerMockRunner.class)` 和 `@PrepareForTest({静态类.class})` 注解
+- [ ] **PowerMock 初始化**：`@Before` 方法中调用 `PowerMockito.mockStatic(静态类.class)` 初始化
 
 **外部依赖层面：**
 - [ ] Mapper 查询是否覆盖了「记录存在」「null（不存在）」「空集合」三个分支（各自独立方法）
