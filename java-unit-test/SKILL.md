@@ -1,6 +1,6 @@
 ---
 name: java-unit-test
-description: Generates Java unit tests for Spring Boot projects following Alibaba naming, JUnit 4/Mockito/PowerMock, and JaCoCo. Supports incremental (git diff vs master) and full-coverage (user-specified class/method) modes. Use when the user asks for unit tests, test generation, or coverage.
+description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范，使用 JUnit 4/Mockito/PowerMock。支持增量模式（git diff vs master）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
 allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "Write"]
 ---
 
