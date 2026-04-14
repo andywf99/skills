@@ -27,6 +27,7 @@ skills/
 | review-new-code-rules       | 按团队工程规则审查新增代码，重点看正确性、性能、事务、锁、ES/SQL/Redis 风险 | 新代码 review、生成代码 review、重点审查数据/性能/事务隐患   |
 | java-comment-doc            | 为 Java 代码补类注释、JavaDoc、字段说明和关键业务注释        | 用户要求补注释、写 JavaDoc、提升可读性                       |
 | java-unit-test              | 为 Java/Spring Boot 项目生成或审查单元测试，关注 Git diff 范围、Mockito、JaCoCo | 新增单测、补覆盖率、review 测试代码                          |
+| generate-flowchart          | 将需求内容转换为 Mermaid Flowchart 流程图，支持业务流程、审批流程、交互流程等场景 | 生成流程图、需求转流程图、业务流程可视化                       |
 | generate-project-info       | 扫描 Java 项目结构并生成 project-info.md                     | 生成项目结构文档、梳理 Controller/Service/Mapper/Feign 清单  |
 | git-ai-search               | 从 git 历史中搜索和恢复 AI 对话上下文                        | 找回之前的 AI 交互记录、恢复历史任务上下文                   |
 | prd2trd                     | 将 PRD 转成 TRD/概要设计文档，按既定设计文档流程输出         | 生成技术方案、PRD 转 TRD、输出概要设计                       |
