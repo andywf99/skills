@@ -2,7 +2,7 @@
 name: batch-prd-preview
 description: 批量处理 Word 文件，转换为 Markdown 预览，生成需求评审报告和汇总报告
 triggers:
-  - 用户说"批量预览PRD"、"批量转换Word"、"批量处理需求文档"、"PRD预览"、"批量需求评审"
+  - 用户说"批量预览PRD"、"批量预览需求文档"、"PRD预览"、"批量预审PRD"、"预审需求文档"
   - 用户提供 Word 文件路径或文件夹
   - 用户要求批量处理 Word 文件
 ---

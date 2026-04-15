@@ -46,8 +46,8 @@ echo     prd-preview-output/
 echo     ├── preview-summary.md    # 汇总报告
 echo     ├── 文件A/
 echo     │   ├── assets/           # 图片目录
-echo     │   └── preview.md        # 转换后的 Markdown
+echo     │   └── prd.md        # 转换后的 Markdown
 echo     └── 文件B/
-echo         └── preview.md
+echo         └── prd.md
 echo.
 exit /b 0
