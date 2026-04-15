@@ -28,13 +28,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 | 仅有 `mockito-inline` | 使用 **MockedStatic** 方案，禁止 PowerMock。阅读 `ref/ref-mockito-inline.md` |
 | 仅有 `powermock` | 使用 **PowerMock** 方案，禁止 MockedStatic。阅读 `ref/ref-powermock.md` |
 | 两者都有 | 优先使用 **mockito-inline + MockedStatic**，不引入 PowerMock |
-| 两者都无 | **询问用户**选择使用哪种方案，并自动在 `pom.xml` 中引入对应依赖 |
-
-4. **询问用户时提供以下选项**：
-   - **mockito-inline（推荐）**：无需额外 Runner，与 Mockito 原生集成，依赖更轻量。将在 `pom.xml` 中添加 `mockito-inline` 依赖。
-   - **PowerMock**：传统方案，功能更全面但依赖更重。将在 `pom.xml` 中添加 `powermock-module-junit4` + `powermock-api-mockito2` 依赖。
-
-5. 用户选择后，在 `pom.xml` 中添加对应依赖，然后按所选方案继续。
+| 两者都无 | 阅读 `ref/ref-powermock.md`，将「POM 依赖」添加到 `pom.xml`，然后使用 **PowerMock** 方案继续 |
 
 ### 增量模式（用户未指定目标）
 
