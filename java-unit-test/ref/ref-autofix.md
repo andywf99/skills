@@ -32,18 +32,25 @@ mvn clean test jacoco:report
 
 ### 错误1：缺少依赖（cannot find symbol）
 
-**修复**：在 pom.xml 中添加 PowerMock 依赖（见 `ref-powermock.md`）。
+**修复**：根据项目使用的静态 Mock 框架添加对应依赖：
+- **mockito-inline 方案**：在 pom.xml 中添加 `mockito-inline` 依赖（见 `ref-mockito-inline.md`）。
+- **PowerMock 方案**：在 pom.xml 中添加 PowerMock 依赖（见 `ref-powermock.md`）。
 
 ### 错误2：NoClassDefFoundError（运行时类缺失）
 
 **修复**：
 1. 检查依赖 scope 是否为 `test`
 2. 执行 `mvn clean install -DskipTests` 重新下载
-3. 确认版本兼容性（PowerMock 2.0.9 + Spring Boot 2.0.x）
+3. 确认版本兼容性：
+   - **mockito-inline**：5.2.0 与 Spring Boot 2.x 兼容
+   - **PowerMock**：2.0.9 + Spring Boot 2.0.x
 
 ### 错误3：NoSuchMethodError（Mockito 版本冲突）
 
-**修复**：检查是否混用了 `MockedStatic` 和 PowerMock，统一使用 PowerMock。
+**修复**：
+1. 检查是否混用了 `MockedStatic` 和 PowerMock，**禁止混用**，统一使用项目选定的方案。
+2. **mockito-inline 方案**：确认 mockito-inline 版本为 5.2.0。
+3. **PowerMock 方案**：确认 PowerMock 2.0.9 与项目 Mockito 版本兼容。
 
 ### 错误4：断言不匹配
 
@@ -57,7 +64,9 @@ mvn clean test jacoco:report
 **修复**：
 1. 确认 `@InjectMocks` 注解在被测类上
 2. 确认所有依赖都有 `@Mock` 注解
-3. 确认使用 `@RunWith(PowerMockRunner.class)`
+3. 确认 Runner 正确：
+   - **mockito-inline**：`@RunWith(MockitoJUnitRunner.class)`
+   - **PowerMock**：`@RunWith(PowerMockRunner.class)`
 
 ### 错误6：测试类未被扫描
 
@@ -69,10 +78,42 @@ mvn clean test jacoco:report
 
 ---
 
-## 修复示例：MockedStatic → PowerMock
+## 修复示例：框架方案转换
+
+### 方案 A：PowerMock → mockito-inline（当项目使用 mockito-inline 时）
 
 ```java
-// 修改前（错误）
+// 修改前（PowerMock 方案，与 mockito-inline 冲突）
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({SessionUtil.class})
+public class XxxTest {
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(SessionUtil.class);
+    }
+}
+
+// 修改后（mockito-inline 方案）
+@RunWith(MockitoJUnitRunner.class)
+public class XxxTest {
+    private MockedStatic<SessionUtil> sessionUtilMock;
+
+    @Before
+    public void setUp() {
+        sessionUtilMock = Mockito.mockStatic(SessionUtil.class);
+    }
+
+    @After
+    public void tearDown() {
+        sessionUtilMock.close();
+    }
+}
+```
+
+### 方案 B：mockito-inline → PowerMock（当项目使用 PowerMock 时）
+
+```java
+// 修改前（MockedStatic 方案，与 PowerMock 冲突）
 @RunWith(MockitoJUnitRunner.class)
 public class XxxTest {
     private MockedStatic<SessionUtil> sessionUtilMock;
@@ -88,7 +129,7 @@ public class XxxTest {
     }
 }
 
-// 修改后（正确）
+// 修改后（PowerMock 方案）
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SessionUtil.class})
 public class XxxTest {

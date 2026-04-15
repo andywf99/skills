@@ -1,6 +1,6 @@
 ---
 name: java-unit-test
-description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范，使用 JUnit 4/Mockito/PowerMock。支持增量模式（git diff vs master）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
+description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范，使用 JUnit 4/Mockito + mockito-inline 或 PowerMock。支持增量模式（git diff vs master）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
 allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "Write"]
 ---
 
@@ -15,12 +15,33 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 执行流程（严格按此顺序，禁止使用 Agent 工具）
 
+### 步骤 0：检测 Mock 框架（所有模式必执行）
+
+在生成测试之前，必须先检测项目使用的静态 Mock 框架：
+
+1. **检测 powermock**：`Grep` 搜索 `pom.xml` 中是否包含 `powermock`（artifactId 为 `powermock-module-junit4` 或 `powermock-api-mockito2`）。
+2. **检测 mockito-inline**：`Grep` 搜索 `pom.xml` 中是否包含 `mockito-inline`（artifactId 为 `mockito-inline`）。
+3. **根据检测结果决定策略**：
+
+| 检测结果 | 策略 |
+|----------|------|
+| 仅有 `mockito-inline` | 使用 **MockedStatic** 方案，禁止 PowerMock。阅读 `ref/ref-mockito-inline.md` |
+| 仅有 `powermock` | 使用 **PowerMock** 方案，禁止 MockedStatic。阅读 `ref/ref-powermock.md` |
+| 两者都有 | 优先使用 **mockito-inline + MockedStatic**，不引入 PowerMock |
+| 两者都无 | **询问用户**选择使用哪种方案，并自动在 `pom.xml` 中引入对应依赖 |
+
+4. **询问用户时提供以下选项**：
+   - **mockito-inline（推荐）**：无需额外 Runner，与 Mockito 原生集成，依赖更轻量。将在 `pom.xml` 中添加 `mockito-inline` 依赖。
+   - **PowerMock**：传统方案，功能更全面但依赖更重。将在 `pom.xml` 中添加 `powermock-module-junit4` + `powermock-api-mockito2` 依赖。
+
+5. 用户选择后，在 `pom.xml` 中添加对应依赖，然后按所选方案继续。
+
 ### 增量模式（用户未指定目标）
 
 1. **获取变更文件**：`git diff --name-only master` 拿到变更文件列表，仅关注 Service/Controller/Component 类。
 2. **获取变更内容**：`git diff master -- <文件>` 查看具体 diff，确定变更的方法。
 3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
-4. **按需读取 ref**：根据被测类的依赖类型，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 5. **生成增量测试**：仅为 diff 中变更的方法生成测试，不测存量方法。
 6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
@@ -28,7 +49,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 1. **定位目标文件**：用 `Glob` 搜索用户指定的类名（如 `**/XxxService.java`）。
 2. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构。
-3. **按需读取 ref**：根据被测类的依赖类型，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+3. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 4. **生成全量测试**：为所有公共方法（或用户指定的方法）生成完整测试，覆盖正常/边界/异常全场景。
 5. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
@@ -42,8 +63,10 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 - 仅用 JUnit 4（`@Test` / `@Before` / `@After`），禁止 JUnit 5。
 - 断言优先 AssertJ；禁止混用多种断言风格。
-- **静态方法 Mock**：使用 PowerMock（v2.0.9），禁止 Mockito 3.4+ 的 `MockedStatic`。
-- 被测代码有静态方法调用时，阅读 `ref/ref-powermock.md` 获取完整模板。
+- **静态方法 Mock 框架由步骤 0 检测结果决定**，禁止混用两套方案：
+  - **mockito-inline 方案**：使用 `MockedStatic`（Mockito 3.4+），无需额外 Runner。阅读 `ref/ref-mockito-inline.md`。
+  - **PowerMock 方案**：使用 PowerMock（v2.0.9）+ `@RunWith(PowerMockRunner.class)`。阅读 `ref/ref-powermock.md`。
+- **禁止在同一测试类中混用 `MockedStatic` 和 PowerMock**。
 
 ### 命名规范（阿里）
 
@@ -77,13 +100,14 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 根据被测代码实际依赖，**阅读对应参考文件**获取 Mock 模板和必测场景：
 
-| 依赖类型       | 参考文件                 | 必测场景概要                                    |
-|----------------|--------------------------|------------------------------------------------|
-| 静态方法       | `ref/ref-powermock.md`   | PowerMock 配置、`@PrepareForTest`、常见静态类    |
-| Mapper/MyBatis | `ref/ref-mapper.md`      | 存在/null/空集合 + 写操作成功/失败 + verify 字段 |
-| Feign 客户端   | `ref/ref-feign.md`       | 正常返回 / 抛异常 / 返回 null（降级）            |
-| Redis          | `ref/ref-redis.md`       | 缓存命中/未命中 + 中间对象 Mock                   |
-| MQ             | `ref/ref-mq.md`          | Producer verify destination+消息体 / Consumer 幂等+异常 |
+| 依赖类型       | 参考文件                     | 必测场景概要                                    |
+|----------------|------------------------------|------------------------------------------------|
+| 静态方法（mockito-inline） | `ref/ref-mockito-inline.md` | `MockedStatic` 配置、`try-with-resources`、常见静态类 |
+| 静态方法（PowerMock）     | `ref/ref-powermock.md`      | PowerMock 配置、`@PrepareForTest`、常见静态类    |
+| Mapper/MyBatis | `ref/ref-mapper.md`          | 存在/null/空集合 + 写操作成功/失败 + verify 字段 |
+| Feign 客户端   | `ref/ref-feign.md`           | 正常返回 / 抛异常 / 返回 null（降级）            |
+| Redis          | `ref/ref-redis.md`           | 缓存命中/未命中 + 中间对象 Mock                   |
+| MQ             | `ref/ref-mq.md`              | Producer verify destination+消息体 / Consumer 幂等+异常 |
 
 **通用规则**：
 - 有 Mock 依赖的写操作，必须 `verify()` 校验调用次数和参数字段值（`argThat`），禁止只用 `any()`。
@@ -142,7 +166,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 - [ ] 增量模式仅覆盖 diff 变更方法；全量模式覆盖用户指定类/方法的所有场景
 - [ ] 命名符合阿里规范（`test_xxx_场景_预期`），无中文方法名
 - [ ] 中文注释完整（类/方法/关键行），说明覆盖场景和验证点
-- [ ] JUnit 4 + Mockito/PowerMock 一致，无混用
+- [ ] JUnit 4 + Mockito 一致，静态 Mock 框架未混用（MockedStatic 与 PowerMock 二选一）
 
 **断言质量**：
 - [ ] 核心断言为具体业务期望值（非弱断言）
@@ -153,7 +177,9 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 **依赖 Mock**：
 - [ ] 写操作有 `verify()` 校验参数字段（`argThat`），非仅 `any()`
 - [ ] 各依赖类型按参考文件覆盖必测场景
-- [ ] PowerMock 配置完整（`@RunWith` + `@PrepareForTest` + `mockStatic`）
+- [ ] 静态 Mock 框架配置完整：
+  - mockito-inline：`MockedStatic` + `try-with-resources` + `@After` 关闭
+  - PowerMock：`@RunWith(PowerMockRunner.class)` + `@PrepareForTest` + `mockStatic`
 
 **验证**：
 - [ ] 测试可运行且通过
