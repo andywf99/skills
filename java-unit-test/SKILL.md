@@ -1,6 +1,6 @@
 ---
 name: java-unit-test
-description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范，使用 JUnit 4/Mockito + mockito-inline 或 PowerMock。支持增量模式（git diff vs master）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
+description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范，使用 JUnit 4/Mockito + mockito-inline 或 PowerMock。支持增量模式（git diff vs master）、本地模式（git diff HEAD 未提交变更）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
 allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "Write"]
 ---
 
@@ -8,7 +8,8 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 生成或审查 Java 单元测试时必须遵循本规范。根据用户输入判断工作模式：
 
-- **增量模式**（默认）：用户未指定类名或方法名时，对比当前分支与 master 分支的 diff，仅为变更代码生成测试。
+- **增量模式**（默认）：用户未指定类名或方法名，且未使用 `local` 参数时，对比当前分支与 master 分支的 diff，仅为变更代码生成测试。
+- **本地模式**（`local`）：用户传入 `local` 参数（如 `/java-unit-test local`）时，对比工作区与 HEAD 的 diff，仅为本地未提交的变更代码生成测试。
 - **全量模式**：用户指定了类名或方法名时，为该类/方法生成完整的单元测试，覆盖所有公共方法。
 
 ---
@@ -30,13 +31,23 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 | 两者都有 | 优先使用 **mockito-inline + MockedStatic**，不引入 PowerMock |
 | 两者都无 | 阅读 `ref/ref-powermock.md`，将「POM 依赖」添加到 `pom.xml`，然后使用 **PowerMock** 方案继续 |
 
-### 增量模式（用户未指定目标）
+### 增量模式（用户未指定目标，非 local）
 
 1. **获取变更文件**：`git diff --name-only master` 拿到变更文件列表，仅关注 Service/Controller/Component 类。
 2. **获取变更内容**：`git diff master -- <文件>` 查看具体 diff，确定变更的方法。
 3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
 4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 5. **生成增量测试**：仅为 diff 中变更的方法生成测试，不测存量方法。
+6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
+
+### 本地模式（用户传入 `local` 参数）
+
+1. **获取本地变更文件**：`git diff HEAD --name-only` 拿到工作区与 HEAD 的差异文件列表（包含已暂存和未暂存的变更），仅关注 Service/Controller/Component 类。
+   - 若无变更，尝试 `git status --short` 确认是否有未跟踪的新文件，提醒用户确认是否需要为新增文件生成测试。
+2. **获取变更内容**：`git diff HEAD -- <文件>` 查看具体 diff，确定变更的方法。
+3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
+4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+5. **生成增量测试**：仅为本地 diff 中变更的方法生成测试，不测存量方法。
 6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
 ### 全量模式（用户指定了类名或方法名）
@@ -121,6 +132,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 ## 5. 测试范围
 
 - **增量模式**：仅为当前分支 vs master 的 diff 变更方法编写测试，不补测存量方法。存量依赖用 Mockito 模拟返回值。
+- **本地模式**：仅为工作区 vs HEAD 的 diff 变更方法编写测试（即本地未提交的变更），不补测已提交或存量方法。
 - **全量模式**：为用户指定类的所有方法（或指定方法）生成完整测试，覆盖正常/边界/异常全场景。
 
 ---
@@ -158,7 +170,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 ## 自检清单
 
 **结构与命名**：
-- [ ] 增量模式仅覆盖 diff 变更方法；全量模式覆盖用户指定类/方法的所有场景
+- [ ] 增量模式仅覆盖 diff 变更方法；本地模式仅覆盖本地未提交变更方法；全量模式覆盖用户指定类/方法的所有场景
 - [ ] 命名符合阿里规范（`test_xxx_场景_预期`），无中文方法名
 - [ ] 中文注释完整（类/方法/关键行），说明覆盖场景和验证点
 - [ ] JUnit 4 + Mockito 一致，静态 Mock 框架未混用（MockedStatic 与 PowerMock 二选一）
