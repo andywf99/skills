@@ -1,0 +1,4 @@
+interface:
+  display_name: "服务质量发版 SQL"
+  short_description: "生成服务质量表结构变更发版 SQL 与 ES mapping 规范。"
+  default_prompt: "使用 $arbitration-release-sql 生成服务质量表结构变更发版 SQL 和 ES mapping。"
