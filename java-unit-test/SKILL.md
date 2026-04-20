@@ -22,23 +22,25 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 **1. 检测 JUnit 版本：**
 - `Grep` 搜索 `pom.xml` 中是否包含 `junit-jupiter`（artifactId 为 `junit-jupiter` 或 `junit-jupiter-api`）。
-- 如果存在 `junit-jupiter` → **JUnit 5 模式**。
-- 如果不存在 → **JUnit 4 模式**。
+- 存在 → **JUnit 5 模式**
+- 不存在 → **JUnit 4 模式**
 
-**2. JUnit 4 模式下检测 Mock 框架：**
+**2. 统一检测 `mockito-inline` 和 `powermock`：**
 
-| 检测结果 | 策略 |
-|----------|------|
-| 仅有 `mockito-inline` | 使用 **MockedStatic** 方案，禁止 PowerMock。阅读 `ref/ref-mockito-inline.md` |
-| 仅有 `powermock` | 使用 **PowerMock** 方案，禁止 MockedStatic。阅读 `ref/ref-powermock.md` |
-| 两者都有 | 优先使用 **mockito-inline + MockedStatic**，不引入 PowerMock |
-| 两者都无 | 阅读 `ref/ref-powermock.md`，将「POM 依赖」添加到 `pom.xml`，然后使用 **PowerMock** 方案继续 |
+| JUnit 版本 | mockito-inline | powermock | 策略 |
+|------------|----------------|-----------|------|
+| JUnit 5 | 有 | - | `@ExtendWith` + `MockedStatic`，阅读 `ref/ref-static-mock.md` |
+| JUnit 5 | 无 | - | 将 `mockito-inline` 依赖添加到 `pom.xml`，然后使用 `MockedStatic`，阅读 `ref/ref-static-mock.md` |
+| JUnit 4 | 有 | - | `@RunWith(MockitoJUnitRunner)` + `MockedStatic`，阅读 `ref/ref-static-mock.md` |
+| JUnit 4 | - | 有 | `@RunWith(PowerMockRunner)` + PowerMock，阅读 `ref/ref-powermock.md` |
+| JUnit 4 | 有 | 有 | 优先 `MockedStatic`，不引入 PowerMock，阅读 `ref/ref-static-mock.md` |
+| JUnit 4 | 无 | 无 | 阅读 `ref/ref-powermock.md`，将「POM 依赖」添加到 `pom.xml`，使用 PowerMock |
 
-**3. JUnit 5 模式下：**
+**3. JUnit 5 模式额外说明：**
 - 使用 `@ExtendWith(MockitoExtension.class)` 替代 `@RunWith`
 - 使用 `@BeforeEach` / `@AfterEach` 替代 `@Before` / `@After`
-- 静态方法 Mock 使用 `mockStatic()`（Mockito 3.4+），禁止 PowerMock。阅读 `ref/ref-static.md`
-- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`
+- 禁止 PowerMock，静态方法 Mock 统一使用 `mockStatic()` + `MockedStatic`
+- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`（JUnit 4 同样适用）
 
 ### 增量模式（用户未指定目标，非 local）
 
@@ -73,24 +75,24 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 1. 基础规范
 
-### 框架与依赖（由步骤 0 检测结果自动决定）
+### 框架与依赖
 
-**JUnit 4 模式：**
-- 使用 JUnit 4（`@Test` / `@Before` / `@After`），禁止 JUnit 5。
-- 静态方法 Mock 框架由步骤 0 检测结果决定，禁止混用两套方案：
-  - **mockito-inline 方案**：使用 `MockedStatic`（Mockito 3.4+），无需额外 Runner。阅读 `ref/ref-mockito-inline.md`。
-  - **PowerMock 方案**：使用 PowerMock（v2.0.9）+ `@RunWith(PowerMockRunner.class)`。阅读 `ref/ref-powermock.md`。
-- **禁止在同一测试类中混用 `MockedStatic` 和 PowerMock**。
+框架选择由步骤 0 检测结果自动决定，以下是各模式下的注解和约束速查：
 
-**JUnit 5 模式：**
-- 使用 JUnit 5（`org.junit.jupiter.api.Test` / `@BeforeEach` / `@AfterEach`），禁止 JUnit 4。
-- 使用 `@ExtendWith(MockitoExtension.class)` 替代 `@RunWith`。
-- 静态方法 Mock 使用 `mockStatic()`（Mockito 3.4+），禁止 PowerMock。阅读 `ref/ref-static.md`。
-- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`。
+| 模式 | 测试注解 | 生命周期 | 扩展/Runner | 静态 Mock | 参考文件 |
+|------|----------|----------|-------------|-----------|----------|
+| JUnit 5 | `org.junit.jupiter.api.Test` | `@BeforeEach` / `@AfterEach` | `@ExtendWith(MockitoExtension.class)` | `mockStatic()` + `MockedStatic` | `ref/ref-static-mock.md` |
+| JUnit 4 + mockito-inline | `org.junit.Test` | `@Before` / `@After` | `@RunWith(MockitoJUnitRunner.class)` | `Mockito.mockStatic()` + `MockedStatic` | `ref/ref-static-mock.md` |
+| JUnit 4 + PowerMock | `org.junit.Test` | `@Before` / `@After` | `@RunWith(PowerMockRunner.class)` | `PowerMockito.mockStatic()` | `ref/ref-powermock.md` |
+
+**禁止项：**
+- 禁止在同一测试类中混用 `MockedStatic` 和 PowerMock
+- 禁止混用 JUnit 4 和 JUnit 5 注解
+- 禁止连接真实依赖，依赖隔离仅用 Mockito
 
 **通用规则：**
-- 断言优先 AssertJ；禁止混用多种断言风格。
-- 依赖隔离：仅用 Mockito，禁止连接真实依赖。
+- 断言优先 AssertJ；禁止混用多种断言风格
+- `@Value` 字段注入统一使用 `ReflectionTestUtils.setField()`
 
 ### 命名规范（阿里）
 
@@ -125,8 +127,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 | 依赖类型       | 参考文件                     | 必测场景概要                                    |
 |----------------|------------------------------|------------------------------------------------|
-| 静态方法（JUnit 5） | `ref/ref-static.md` | Mockito mockStatic 配置、MockedStatic 生命周期 |
-| 静态方法（JUnit 4 + mockito-inline） | `ref/ref-mockito-inline.md` | `MockedStatic` 配置、`try-with-resources`、常见静态类 |
+| 静态方法（JUnit 5 / JUnit 4 + mockito-inline） | `ref/ref-static-mock.md` | MockedStatic 配置、生命周期管理、常见静态类 |
 | 静态方法（JUnit 4 + PowerMock）     | `ref/ref-powermock.md`      | PowerMock 配置、`@PrepareForTest`、常见静态类    |
 | GraySwitch 灰度开关 | `ref/ref-gray-switch.md` | 灰度开启/关闭双场景、Controller 层统一拦截返回 |
 | Mapper/MyBatis | `ref/ref-mapper.md`          | 存在/null/空集合 + 写操作成功/失败 + verify 字段 |

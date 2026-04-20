@@ -17,12 +17,6 @@ doReturn(true).when(service).updateById(any(QualityFilingOa.class));
 doReturn(Collections.emptyList()).when(service).list(any(LambdaQueryWrapper.class));
 ```
 
-### POM 依赖（已有 PowerMock 时）
-
-```xml
-<!-- 如已引入 PowerMock，无需额外依赖 -->
-```
-
 ### 测试类模板
 
 ```java
@@ -134,7 +128,202 @@ public class QualityFilingOaServiceImpl_submitProxy_test {
 5. **`any()` vs `any(XxxWrapper.class)`** - 使用 `any()` 通配符更通用，避免类型匹配问题
 6. **静态方法单独 mock** - `GrayUtils.isGray()` 等静态方法通过 `@PrepareForTest` + `PowerMockito.mockStatic()` mock
 
-### 常见错误
+---
+
+## JUnit 5 模式
+
+### 依赖声明
+
+```java
+@ExtendWith(MockitoExtension.class)
+class XxxMapperTest {
+    @Mock
+    private XxxMapper xxxMapper;
+
+    @InjectMocks
+    private XxxServiceImpl xxxService;
+
+    @BeforeEach
+    void setUp() {
+        // 初始化设置，如需预热 lambda 缓存：
+        // TableInfoHelper.initTableInfo(
+        //     new MapperBuilderAssistant(new MybatisConfiguration(), ""),
+        //     XxxEntity.class
+        // );
+    }
+
+    @AfterEach
+    void tearDown() {
+        // 清理资源
+    }
+}
+```
+
+### 查询场景——必须覆盖三个分支（各自独立测试方法）
+
+**记录存在**：
+```java
+@Test
+void selectById_existingRecord_returnsEntity() {
+    // Given
+    User mockUser = new User();
+    mockUser.setId(1L);
+    mockUser.setUsername("admin");
+    when(userMapper.selectById(1L)).thenReturn(mockUser);
+
+    // When
+    User result = userService.getById(1L);
+
+    // Then
+    assertNotNull(result);
+    assertEquals("admin", result.getUsername());
+}
+```
+
+**记录不存在（null）**：
+```java
+@Test
+void selectById_notFound_returnsNull() {
+    // Given
+    when(userMapper.selectById(99L)).thenReturn(null);
+
+    // When
+    User result = userService.getById(99L);
+
+    // Then
+    assertNull(result);
+}
+```
+
+**结果为空集合**：
+```java
+@Test
+void selectList_noMatch_returnsEmptyList() {
+    // Given
+    when(userMapper.selectList(any())).thenReturn(Collections.emptyList());
+
+    // When
+    List<User> result = userService.list();
+
+    // Then
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
+}
+```
+
+### 写操作——必须覆盖两个分支
+
+**成功（影响行数=1）**：
+```java
+@Test
+void updateById_recordExists_returnsSuccess() {
+    // Given
+    when(userMapper.updateById(any())).thenReturn(1);
+
+    // When
+    int rows = userMapper.updateById(new User());
+
+    // Then
+    assertEquals(1, rows);
+}
+```
+
+**失败（影响行数=0，记录不存在）**：
+```java
+@Test
+void updateById_recordNotFound_returnsZero() {
+    // Given
+    when(userMapper.updateById(any())).thenReturn(0);
+
+    // When
+    int rows = userMapper.updateById(new User());
+
+    // Then
+    assertEquals(0, rows);
+}
+```
+
+### verify 必须验证到入参字段级别
+
+```java
+// 禁止——只验证调用次数，参数错误也通过
+verify(userMapper, times(1)).insert(any());
+
+// 必须——验证关键字段值正确
+verify(userMapper, times(1)).insert(argThat(user ->
+    "admin".equals(user.getUsername()) && Integer.valueOf(1).equals(user.getStatus())));
+```
+
+---
+
+## JUnit 4 模式（通用）
+
+### 依赖声明
+
+```java
+@RunWith(MockitoJUnitRunner.class)
+public class XxxMapperTest {
+    @Mock
+    private XxxMapper xxxMapper;
+
+    @InjectMocks
+    private XxxServiceImpl xxxService;
+
+    @Before
+    public void setUp() {
+        // 初始化设置
+    }
+
+    @After
+    public void tearDown() {
+        // 清理资源
+    }
+}
+```
+
+### 查询场景——必须覆盖三个分支（各自独立测试方法）
+
+**记录存在**：
+```java
+when(userMapper.selectById(1L)).thenReturn(mockUser);
+```
+
+**记录不存在（null）**：
+```java
+when(userMapper.selectById(99L)).thenReturn(null);
+```
+
+**结果为空集合**：
+```java
+when(userMapper.selectList(any())).thenReturn(Collections.emptyList());
+```
+
+### 写操作——必须覆盖两个分支
+
+**成功（影响行数=1）**：
+```java
+when(userMapper.updateById(any())).thenReturn(1);
+```
+
+**失败（影响行数=0，记录不存在）**：
+```java
+when(userMapper.updateById(any())).thenReturn(0);
+```
+
+### verify 必须验证到入参字段级别
+
+```java
+// 禁止——只验证调用次数，参数错误也通过
+verify(userMapper, times(1)).insert(any());
+
+// 必须——验证关键字段值正确
+verify(userMapper, times(1)).insert(argThat(user ->
+    "admin".equals(user.getUsername()) && Integer.valueOf(1).equals(user.getStatus())));
+```
+
+---
+
+## 常见错误（PowerMock 专项）
 
 **错误1**：
 ```
@@ -155,56 +344,3 @@ Mocking methods declared on non-public parent classes is not supported
 ```
 **原因**：尝试 mock 继承自非公开父类的方法（如 `OrikaBeanMapper.map()`）
 **解决**：无法 mock，需要通过 spy 包装真实对象或通过集成测试覆盖
-
-
-## 依赖声明
-
-```java
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
-    @Mock
-    private UserMapper userMapper;
-    @InjectMocks
-    private UserService userService;
-}
-```
-
-## 查询场景——必须覆盖三个分支（各自独立测试方法）
-
-**记录存在**：
-```java
-when(userMapper.selectById(1L)).thenReturn(mockUser);
-```
-
-**记录不存在（null）**：
-```java
-when(userMapper.selectById(99L)).thenReturn(null);
-```
-
-**结果为空集合**：
-```java
-when(userMapper.selectList(any())).thenReturn(Collections.emptyList());
-```
-
-## 写操作——必须覆盖两个分支
-
-**成功（影响行数=1）**：
-```java
-when(userMapper.updateById(any())).thenReturn(1);
-```
-
-**失败（影响行数=0，记录不存在）**：
-```java
-when(userMapper.updateById(any())).thenReturn(0);
-```
-
-## verify 必须验证到入参字段级别
-
-```java
-// 禁止——只验证调用次数，参数错误也通过
-verify(userMapper, times(1)).insert(any());
-
-// 必须——验证关键字段值正确
-verify(userMapper, times(1)).insert(argThat(user ->
-    "admin".equals(user.getUsername()) && Integer.valueOf(1).equals(user.getStatus())));
-```
