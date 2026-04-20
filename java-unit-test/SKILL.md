@@ -1,6 +1,6 @@
 ---
 name: java-unit-test
-description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范，使用 JUnit 4/Mockito + mockito-inline 或 PowerMock。支持增量模式（git diff vs master）、本地模式（git diff HEAD 未提交变更）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
+description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范。自动检测 JUnit 版本（JUnit 4 或 JUnit 5），使用 Mockito + mockito-inline/PowerMock（JUnit 4）或 Mockito/MockedStatic（JUnit 5）。支持增量模式（git diff vs master）、本地模式（git diff HEAD 未提交变更）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
 allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "Write"]
 ---
 
@@ -16,13 +16,16 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 执行流程（严格按此顺序，禁止使用 Agent 工具）
 
-### 步骤 0：检测 Mock 框架（所有模式必执行）
+### 步骤 0：检测 JUnit 版本和 Mock 框架（所有模式必执行）
 
-在生成测试之前，必须先检测项目使用的静态 Mock 框架：
+在生成测试之前，必须先检测项目使用的 JUnit 版本和静态 Mock 框架：
 
-1. **检测 powermock**：`Grep` 搜索 `pom.xml` 中是否包含 `powermock`（artifactId 为 `powermock-module-junit4` 或 `powermock-api-mockito2`）。
-2. **检测 mockito-inline**：`Grep` 搜索 `pom.xml` 中是否包含 `mockito-inline`（artifactId 为 `mockito-inline`）。
-3. **根据检测结果决定策略**：
+**1. 检测 JUnit 版本：**
+- `Grep` 搜索 `pom.xml` 中是否包含 `junit-jupiter`（artifactId 为 `junit-jupiter` 或 `junit-jupiter-api`）。
+- 如果存在 `junit-jupiter` → **JUnit 5 模式**。
+- 如果不存在 → **JUnit 4 模式**。
+
+**2. JUnit 4 模式下检测 Mock 框架：**
 
 | 检测结果 | 策略 |
 |----------|------|
@@ -31,12 +34,18 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 | 两者都有 | 优先使用 **mockito-inline + MockedStatic**，不引入 PowerMock |
 | 两者都无 | 阅读 `ref/ref-powermock.md`，将「POM 依赖」添加到 `pom.xml`，然后使用 **PowerMock** 方案继续 |
 
+**3. JUnit 5 模式下：**
+- 使用 `@ExtendWith(MockitoExtension.class)` 替代 `@RunWith`
+- 使用 `@BeforeEach` / `@AfterEach` 替代 `@Before` / `@After`
+- 静态方法 Mock 使用 `mockStatic()`（Mockito 3.4+），禁止 PowerMock。阅读 `ref/ref-static.md`
+- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`
+
 ### 增量模式（用户未指定目标，非 local）
 
 1. **获取变更文件**：`git diff --name-only master` 拿到变更文件列表，仅关注 Service/Controller/Component 类。
 2. **获取变更内容**：`git diff master -- <文件>` 查看具体 diff，确定变更的方法。
 3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
-4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 5. **生成增量测试**：仅为 diff 中变更的方法生成测试，不测存量方法。
 6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
@@ -46,7 +55,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
    - 若无变更，尝试 `git status --short` 确认是否有未跟踪的新文件，提醒用户确认是否需要为新增文件生成测试。
 2. **获取变更内容**：`git diff HEAD -- <文件>` 查看具体 diff，确定变更的方法。
 3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
-4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 5. **生成增量测试**：仅为本地 diff 中变更的方法生成测试，不测存量方法。
 6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
@@ -54,7 +63,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 1. **定位目标文件**：用 `Glob` 搜索用户指定的类名（如 `**/XxxService.java`）。
 2. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构。
-3. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的框架检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+3. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 4. **生成全量测试**：为所有公共方法（或用户指定的方法）生成完整测试，覆盖正常/边界/异常全场景。
 5. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
@@ -64,14 +73,24 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 1. 基础规范
 
-### 框架与依赖
+### 框架与依赖（由步骤 0 检测结果自动决定）
 
-- 仅用 JUnit 4（`@Test` / `@Before` / `@After`），禁止 JUnit 5。
-- 断言优先 AssertJ；禁止混用多种断言风格。
-- **静态方法 Mock 框架由步骤 0 检测结果决定**，禁止混用两套方案：
+**JUnit 4 模式：**
+- 使用 JUnit 4（`@Test` / `@Before` / `@After`），禁止 JUnit 5。
+- 静态方法 Mock 框架由步骤 0 检测结果决定，禁止混用两套方案：
   - **mockito-inline 方案**：使用 `MockedStatic`（Mockito 3.4+），无需额外 Runner。阅读 `ref/ref-mockito-inline.md`。
   - **PowerMock 方案**：使用 PowerMock（v2.0.9）+ `@RunWith(PowerMockRunner.class)`。阅读 `ref/ref-powermock.md`。
 - **禁止在同一测试类中混用 `MockedStatic` 和 PowerMock**。
+
+**JUnit 5 模式：**
+- 使用 JUnit 5（`org.junit.jupiter.api.Test` / `@BeforeEach` / `@AfterEach`），禁止 JUnit 4。
+- 使用 `@ExtendWith(MockitoExtension.class)` 替代 `@RunWith`。
+- 静态方法 Mock 使用 `mockStatic()`（Mockito 3.4+），禁止 PowerMock。阅读 `ref/ref-static.md`。
+- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`。
+
+**通用规则：**
+- 断言优先 AssertJ；禁止混用多种断言风格。
+- 依赖隔离：仅用 Mockito，禁止连接真实依赖。
 
 ### 命名规范（阿里）
 
@@ -87,7 +106,6 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 - `public void` + `@Test`，**单方法只测一个逻辑点**，禁止多场景合并。
 - 覆盖正常、边界、异常场景；每个 `throw` 语句必须有独立测试方法。
-- 依赖隔离：仅用 Mockito，禁止连接真实依赖。
 - 测试类 `/** */` 说明测试范围；测试方法 `/** */` 说明场景+覆盖行+验证点；关键行 `//` 说明 Mock/断言作用。
 
 ---
@@ -107,8 +125,9 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 | 依赖类型       | 参考文件                     | 必测场景概要                                    |
 |----------------|------------------------------|------------------------------------------------|
-| 静态方法（mockito-inline） | `ref/ref-mockito-inline.md` | `MockedStatic` 配置、`try-with-resources`、常见静态类 |
-| 静态方法（PowerMock）     | `ref/ref-powermock.md`      | PowerMock 配置、`@PrepareForTest`、常见静态类    |
+| 静态方法（JUnit 5） | `ref/ref-static.md` | Mockito mockStatic 配置、MockedStatic 生命周期 |
+| 静态方法（JUnit 4 + mockito-inline） | `ref/ref-mockito-inline.md` | `MockedStatic` 配置、`try-with-resources`、常见静态类 |
+| 静态方法（JUnit 4 + PowerMock）     | `ref/ref-powermock.md`      | PowerMock 配置、`@PrepareForTest`、常见静态类    |
 | GraySwitch 灰度开关 | `ref/ref-gray-switch.md` | 灰度开启/关闭双场景、Controller 层统一拦截返回 |
 | Mapper/MyBatis | `ref/ref-mapper.md`          | 存在/null/空集合 + 写操作成功/失败 + verify 字段 |
 | Feign 客户端   | `ref/ref-feign.md`           | 正常返回 / 抛异常 / 返回 null（降级）            |
@@ -173,7 +192,8 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 - [ ] 增量模式仅覆盖 diff 变更方法；本地模式仅覆盖本地未提交变更方法；全量模式覆盖用户指定类/方法的所有场景
 - [ ] 命名符合阿里规范（`test_xxx_场景_预期`），无中文方法名
 - [ ] 中文注释完整（类/方法/关键行），说明覆盖场景和验证点
-- [ ] JUnit 4 + Mockito 一致，静态 Mock 框架未混用（MockedStatic 与 PowerMock 二选一）
+- [ ] JUnit 版本与项目一致，未混用 JUnit 4 和 JUnit 5
+- [ ] 静态 Mock 框架未混用（MockedStatic 与 PowerMock 二选一）
 
 **断言质量**：
 - [ ] 核心断言为具体业务期望值（非弱断言）
@@ -184,9 +204,10 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 **依赖 Mock**：
 - [ ] 写操作有 `verify()` 校验参数字段（`argThat`），非仅 `any()`
 - [ ] 各依赖类型按参考文件覆盖必测场景
-- [ ] 静态 Mock 框架配置完整：
-  - mockito-inline：`MockedStatic` + `try-with-resources` + `@After` 关闭
-  - PowerMock：`@RunWith(PowerMockRunner.class)` + `@PrepareForTest` + `mockStatic`
+- [ ] 静态 Mock 框架配置完整（根据检测版本）：
+  - JUnit 5：`@ExtendWith(MockitoExtension.class)` + `mockStatic()` + `@AfterEach` 关闭
+  - JUnit 4 + mockito-inline：`MockedStatic` + `try-with-resources` + `@After` 关闭
+  - JUnit 4 + PowerMock：`@RunWith(PowerMockRunner.class)` + `@PrepareForTest` + `mockStatic`
 - [ ] GraySwitch 灰度开关覆盖开启/关闭双场景，Controller 层验证不调用 Service
 
 **验证**：
