@@ -159,7 +159,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 6. JaCoCo 覆盖率
 
-- 变更代码：行覆盖率 ≥ 90%，分支覆盖率 ≥ 85%。
+- 变更代码：行覆盖率 ≥ 90%，分支覆盖率 ≥ 90%。
 - 未集成 JaCoCo 时，生成插件配置（v0.8.7）并说明插入位置。
 - 报告命令：`mvn clean test jacoco:report`，路径：`target/jacoco-ut/index.html`。
 
@@ -173,13 +173,14 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 2. **运行测试**：`mvn clean test -Dtest=XxxTest`
 3. **失败修复**：根据错误类型自动修复（依赖缺失/编译/运行时/断言），详见 `ref/ref-autofix.md`。
 4. **覆盖率报告**：`mvn clean test jacoco:report`
+5. **覆盖率不达标时循环补充**：解析 JaCoCo 报告，若行覆盖率 < 90% 或分支覆盖率 < 90%，定位未覆盖的类/方法/分支，针对性补充测试用例，重新运行步骤 2-4，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
 
 ---
 
 ## 8. 输出要求
 
 - 生成完整测试类（含全部 import），标注测试方法对应的 Git 变更行。
-- 附带覆盖率说明（行 ≥ 90%、分支 ≥ 85%）。
+- 附带覆盖率说明（行 ≥ 90%、分支 ≥ 90%）。
 - 未集成的依赖/插件，生成 POM 片段并标明插入位置。
 - 注释全部中文。
 - 附带测试运行命令 + JaCoCo 报告生成命令。
@@ -213,5 +214,5 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 **验证**：
 - [ ] 测试可运行且通过
-- [ ] 覆盖率达标（行 ≥ 90%、分支 ≥ 85%）
+- [ ] 覆盖率达标（行 ≥ 90%、分支 ≥ 90%）
 - [ ] 已提供运行命令和报告路径
