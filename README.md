@@ -80,6 +80,7 @@ skills/
 | `install-ai-coding-collector` | 安装 AI Coding 代码采集工具 git-ai，仅支持 Windows | 安装 git-ai、部署 Hook Server、配置代码采集 |
 | `install-speckit` | 初始化 Speckit 环境，配置项目技术栈和开发规范 | 项目要接入 Speckit 规范时 |
 | `install-openspec` | 检查 Node.js 版本并安装 OpenSpec CLI | 安装 OpenSpec CLI |
+| `install-superpowers` | 安装 Claude Code Superpowers 插件，通过官方插件源全局安装 | 安装 Superpowers 插件、增强 Claude Code 能力 |
 
 ### release — 发布/灰度
 
