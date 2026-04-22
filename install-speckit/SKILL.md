@@ -1,5 +1,5 @@
 ---
-name: infra-speckit
+name: install-speckit
 description: 快速初始化 Speckit 环境，配置项目技术栈和开发规范。
 ---
 

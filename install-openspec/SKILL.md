@@ -1,5 +1,5 @@
 ---
-name: infra-openspec
+name: install-openspec
 description: 检查 Node.js 版本并安装 OpenSpec CLI
 triggers:
   - 安装OpenSpec
