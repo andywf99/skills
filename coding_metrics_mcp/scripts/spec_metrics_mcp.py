@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 import httpx
 from datetime import datetime
 import difflib
@@ -8,6 +9,10 @@ from mcp.server.fastmcp import FastMCP
 
 # 初始化 MCP Server
 mcp = FastMCP("CodingMetricsLocal")
+
+# 避免 httpx/httpcore 请求日志污染 stdio 型 MCP 通道
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 # 在内存中保存修改前快照
 SNAPSHOTS = {}
