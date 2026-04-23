@@ -64,7 +64,39 @@ git-ai -v
 - 输出版本号：提示用户「git-ai 代码采集工具安装成功，版本：X.X.X」
 - 仍然报错：提示用户「安装后验证失败，请检查安装日志或手动重启终端后再试」
 
-## 第5步：部署 Hook Server
+## 第5步：配置 Claude Code Hook
+
+在 Claude Code 的 `settings.json` 中添加 Hook 配置，使文件编辑操作自动触发 git-ai checkpoint。
+
+配置文件路径：`~/.claude/settings.json`
+
+需要添加的配置：
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://127.0.0.1:39393/claude-post"
+          }
+        ],
+        "matcher": "Write|Edit|MultiEdit"
+      }
+    ]
+  }
+}
+```
+
+**操作逻辑：**
+1. 读取 `~/.claude/settings.json` 文件（不存在则视为空对象 `{}`）
+2. 检查 `hooks.PostToolUse` 中是否已存在 `url` 包含 `127.0.0.1:39393/claude-post` 的条目
+   - 已存在：提示用户「Hook 配置已存在，跳过该步骤」，直接进入第6步
+   - 不存在：将上述 hook 配置合并到现有 `settings.json` 中（保留已有配置，仅追加新条目），然后写回文件
+
+## 第6步：部署 Hook Server
 
 将本 skill 目录下的两个文件复制到 Claude Code 的 hooks 目录中：
 
@@ -79,11 +111,11 @@ git-ai -v
 mkdir -p ~/.claude/hooks && cp "{{SKILL_DIR}}/doc/git-ai-hook-server.js" ~/.claude/hooks/git-ai-hook-server.js && cp "{{SKILL_DIR}}/doc/git-ai-hook-server-start.ps1" ~/.claude/hooks/git-ai-hook-server-start.ps1
 ```
 
-其中 `{{SKILL_DIR}}` 为本 skill 所在目录（即 `infra-git-ai` 文件夹的绝对路径）。
+其中 `{{SKILL_DIR}}` 为本 skill 所在目录（即 `install-ai-coding-collector` 文件夹的绝对路径）。
 
 **注意：** 如果目标文件已存在，直接覆盖替换。
 
-## 第6步：启动 Hook Server
+## 第7步：启动 Hook Server
 
 使用 PowerShell 执行启动脚本，注册 Windows 计划任务并启动 Hook Server：
 
