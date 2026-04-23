@@ -1,0 +1,4 @@
+interface:
+  display_name: "新增代码规则审查"
+  short_description: "按工程规则审查新增代码"
+  default_prompt: "使用 $review-new-code-rules 按团队的 Elasticsearch、数据库、Redis、事务与安全规范审查新增代码。"

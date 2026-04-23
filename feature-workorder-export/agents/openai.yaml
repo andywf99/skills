@@ -1,0 +1,4 @@
+interface:
+  display_name: "工单导出开发"
+  short_description: "聚焦工单导出字段、导出 VO、Mapper SQL 与服务链路改造"
+  default_prompt: "Use $implement-workorder-export to add or review work order export fields across export VO, mapper SQL, service conversion, and async export checks."

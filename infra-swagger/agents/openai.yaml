@@ -1,0 +1,4 @@
+interface:
+  display_name: "集成 JT Swagger"
+  short_description: "为 Spring Boot 服务集成 JT Swagger 并暴露文档端点"
+  default_prompt: "Use $integrate-jt-swagger to integrate jt-swagger into this Spring Boot service and expose actuator swagger endpoints."
