@@ -1,6 +1,6 @@
 ---
 name: java-unittest
-description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范。自动检测 JUnit 版本（JUnit 4 或 JUnit 5），使用 Mockito + mockito-inline/PowerMock（JUnit 4）或 Mockito/MockedStatic（JUnit 5）。支持增量模式（git diff vs master）、本地模式（git diff HEAD 未提交变更）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
+description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范。自动检测 JUnit 版本（JUnit 4 或 JUnit 5），使用 Mockito + mockito-inline/PowerMock（JUnit 4）或 Mockito/MockedStatic（JUnit 5）。支持增量模式（git diff vs master）、commit 模式（指定 commit id 之后的所有变更）、本地模式（git diff HEAD 未提交变更）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
 allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "Write"]
 ---
 
@@ -8,7 +8,8 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 生成或审查 Java 单元测试时必须遵循本规范。根据用户输入判断工作模式：
 
-- **增量模式**（默认）：用户未指定类名或方法名，且未使用 `local` 参数时，对比当前分支与 master 分支的 diff，仅为变更代码生成测试。
+- **增量模式**（默认）：用户未指定类名或方法名，且未使用 `local` / `commit` 参数时，对比当前分支与 master 分支的 diff，仅为变更代码生成测试。
+- **commit 模式**：用户传入 `commit {commitId}`（如 `commit f6f19fe2`）时，对比指定 commit 之后到 HEAD 的所有变更，为这些变更代码生成测试。
 - **本地模式**（`local`）：用户传入 `local` 参数（如 `/java-unit-test local`）时，对比工作区与 HEAD 的 diff，仅为本地未提交的变更代码生成测试。
 - **全量模式**：用户指定了类名或方法名时，为该类/方法生成完整的单元测试，覆盖所有公共方法。
 
@@ -65,6 +66,17 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
 5. **生成增量测试**：仅为 diff 中变更的方法生成测试，不测存量方法。
 6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
+
+### commit 模式（用户传入 `commit {commitId}`）
+
+1. **校验 commit id**：`git rev-parse --verify {commitId}` 验证 commit id 是否存在。无效则提示用户检查并重新输入。
+2. **获取变更文件**：`git diff --name-only {commitId} HEAD` 拿到该 commit 之后到 HEAD 的所有变更文件，仅关注 Service/Controller/Component 类。
+   - 若无变更文件：提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，**结束**。
+3. **获取变更内容**：`git diff {commitId} HEAD -- <文件>` 查看具体 diff，确定变更的方法。
+4. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
+5. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+6. **生成增量测试**：仅为 {commitId}..HEAD 的 diff 中变更的方法生成测试，不测存量方法。
+7. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
 
 ### 本地模式（用户传入 `local` 参数）
 
@@ -167,6 +179,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 ## 5. 测试范围
 
 - **增量模式**：仅为当前分支 vs master 的 diff 变更方法编写测试，不补测存量方法。存量依赖用 Mockito 模拟返回值。
+- **commit 模式**：仅为指定 commit 之后到 HEAD 的 diff 变更方法编写测试，不补测存量方法。存量依赖用 Mockito 模拟返回值。
 - **本地模式**：仅为工作区 vs HEAD 的 diff 变更方法编写测试（即本地未提交的变更），不补测已提交或存量方法。
 - **全量模式**：为用户指定类的所有方法（或指定方法）生成完整测试，覆盖正常/边界/异常全场景。
 
@@ -206,7 +219,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 ## 自检清单
 
 **结构与命名**：
-- [ ] 增量模式仅覆盖 diff 变更方法；本地模式仅覆盖本地未提交变更方法；全量模式覆盖用户指定类/方法的所有场景
+- [ ] 增量模式仅覆盖 diff 变更方法；commit 模式仅覆盖指定 commit 之后的变更方法；本地模式仅覆盖本地未提交变更方法；全量模式覆盖用户指定类/方法的所有场景
 - [ ] 命名符合阿里规范（`test_xxx_场景_预期`），无中文方法名
 - [ ] 中文注释完整（类/方法/关键行），说明覆盖场景和验证点
 - [ ] JUnit 版本与项目一致，未混用 JUnit 4 和 JUnit 5
