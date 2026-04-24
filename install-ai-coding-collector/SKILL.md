@@ -18,7 +18,7 @@ triggers:
 
 ## 第1步：环境检查
 
-同时检查管理员权限和操作系统：
+检查管理员权限和操作系统：
 
 ```bash
 net session > /dev/null 2>&1 && echo "ADMIN" || echo "NOT_ADMIN"
@@ -28,19 +28,18 @@ net session > /dev/null 2>&1 && echo "ADMIN" || echo "NOT_ADMIN"
 uname -s
 ```
 
-**判断逻辑：**
-- `NOT_ADMIN`：**停止执行**，提示用户「当前终端没有管理员权限，请以管理员身份运行终端后重新执行安装。右键点击终端 → 选择"以管理员身份运行"」
-- 非 Windows（`Darwin` / `Linux`）：**停止执行**，提示用户「git-ai 代码采集工具仅支持 Windows 系统，当前为 {系统}，无法安装」
-- `ADMIN` 且 Windows（`MINGW` / `Windows` 开头）：继续执行第2步
+- `NOT_ADMIN`：停止执行，提示「请以管理员身份运行终端后重新执行安装」
+- 非 Windows（`Darwin` / `Linux`）：停止执行，提示「git-ai 仅支持 Windows 系统」
+- `ADMIN` 且 Windows：继续执行
 
-## 第2步：检查是否已安装 git-ai
+## 第2步：检查是否已安装
 
 ```bash
 git-ai -v
 ```
 
-- 成功输出版本号：提示用户「git-ai 已安装，版本：X.X.X，跳过安装步骤」，**结束**
-- 报错（未找到命令等）：继续执行第3步
+- 成功输出版本号：提示「git-ai 已安装，版本：X.X.X，跳过安装」，结束
+- 报错：继续执行
 
 ## 第3步：安装 git-ai
 
@@ -48,34 +47,26 @@ git-ai -v
 powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://usegitai.com/install.ps1 | iex"
 ```
 
-**注意：**
-- 此命令需要通过 Bash 工具执行，Claude Code 的 Bash 环境支持直接调用 `powershell`
-- 如果安装过程中出现权限相关错误，提示用户「请以管理员身份运行终端后重新执行安装」
+权限错误时提示「请以管理员身份运行终端后重新执行安装」
 
 ## 第4步：配置环境变量
 
-检查系统 PATH 中是否已包含 git-ai 路径：
+检查 PATH 是否包含 `.git-ai\bin`：
 
 ```bash
 powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';'"
 ```
 
-- 输出中包含 `C:\Users\{用户名}\.git-ai\bin`：环境变量已存在，跳过写入，直接刷新
-- 输出中不包含 `.git-ai\bin`：查找安装目录：
+- 已存在：刷新终端 PATH
+- 不存在：查找安装目录，写入 PATH：
 
 ```bash
 powershell -NoProfile -Command "Get-ChildItem -Path $env:USERPROFILE\.git-ai -ErrorAction SilentlyContinue | Select-Object FullName"
 ```
 
-  - 找到 `$env:USERPROFILE\.git-ai\bin` 目录：写入系统 PATH：
+找到目录则写入 PATH；未找到则停止执行，提示「安装可能未成功，请重新执行本 skill」。
 
-```bash
-powershell -NoProfile -Command "[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetFolderPath('UserProfile') + '\.git-ai\bin', 'Machine')"
-```
-
-  - 未找到 `.git-ai` 目录：**停止执行**，提示用户「未找到 git-ai 安装目录，安装可能未成功，请重新执行本 skill」
-
-刷新当前终端的 PATH（安装或写入环境变量后必须执行）：
+刷新终端 PATH：
 
 ```bash
 powershell -NoProfile -Command '$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")'
@@ -87,14 +78,12 @@ powershell -NoProfile -Command '$env:Path = [System.Environment]::GetEnvironment
 git-ai -v
 ```
 
-- 输出版本号：提示用户「git-ai 代码采集工具安装成功，版本：X.X.X」
-- 仍然报错：提示用户「安装后验证失败，请检查安装日志或手动重启终端后再试」
+- 输出版本号：提示「git-ai 安装成功，版本：X.X.X」
+- 报错：提示「安装后验证失败，请检查安装日志或手动重启终端后再试」
 
 ## 第6步：配置 Claude Code Hook
 
-在 `~/.claude/settings.json` 中添加 Hook 配置，使文件编辑操作自动触发 git-ai checkpoint。
-
-需要添加的配置：
+在 `~/.claude/settings.json` 中添加 Hook 配置：
 
 ```json
 {
@@ -114,39 +103,35 @@ git-ai -v
 }
 ```
 
-**操作逻辑：**
-1. 读取 `~/.claude/settings.json`（不存在则视为空对象 `{}`）
-2. 检查 `hooks.PostToolUse` 中是否已存在 `url` 包含 `127.0.0.1:39393/claude-post` 的条目
-   - 已存在：提示用户「Hook 配置已存在，跳过该步骤」
-   - 不存在：将上述 hook 配置合并到现有 `settings.json` 中（保留已有配置，仅追加新条目），然后写回文件
+读取 `~/.claude/settings.json`，检查 `hooks.PostToolUse` 是否已包含 `127.0.0.1:39393/claude-post`：
+- 已存在：提示「Hook 配置已存在，跳过」
+- 不存在：合并配置（保留已有配置），写回文件
 
-**CC Switch 提示：** 配置完成后，提示用户「如果使用 CC Switch 切换模型，请将上述 Hook 配置同时添加到 CC Switch 通用配置中，避免切换模型后代码采集失效」
+提示「如使用 CC Switch，请将此 Hook 配置同时添加到 CC Switch 通用配置中」
 
 ## 第7步：部署并启动 Hook Server
 
-将本 skill 目录下的两个文件复制到 Claude Code 的 hooks 目录中：
+复制 Hook Server 文件到 Claude Code hooks 目录：
 
 ```bash
 mkdir -p ~/.claude/hooks && cp "{{SKILL_DIR}}/doc/git-ai-hook-server.js" ~/.claude/hooks/git-ai-hook-server.js && cp "{{SKILL_DIR}}/doc/git-ai-hook-server-start.ps1" ~/.claude/hooks/git-ai-hook-server-start.ps1
 ```
 
-其中 `{{SKILL_DIR}}` 为本 skill 所在目录（即 `install-ai-coding-collector` 文件夹的绝对路径）。目标文件已存在则直接覆盖替换。
-
-启动 Hook Server（注册 Windows 计划任务并立即启动）：
+注册并启动计划任务：
 
 ```bash
 powershell -NoProfile -ExecutionPolicy Bypass -File ~/.claude/hooks/git-ai-hook-server-start.ps1
 ```
 
-验证计划任务是否注册成功：
+验证计划任务：
 
 ```bash
 powershell -NoProfile -Command "Get-ScheduledTask -TaskName 'GitAiHookServer' | Get-ScheduledTaskInfo"
 ```
 
-- `TaskName` 存在且 `LastRunTime` 有值：提示用户「Hook Server 计划任务已注册且已运行，安装流程全部完成」
-- 未找到计划任务：提示用户「Hook Server 计划任务未注册成功，请检查启动脚本执行是否有报错」
-- 计划任务存在但状态异常：提示用户「Hook Server 计划任务状态异常，请尝试手动执行启动脚本或重启终端」
+- `TaskName` 存在且 `LastRunTime` 有值：提示「Hook Server 已注册且运行，安装流程全部完成」
+- 未找到：提示「计划任务未注册成功，请检查启动脚本执行是否有报错」
+- 状态异常：提示「计划任务状态异常，请尝试手动执行启动脚本或重启终端」
 
 ## 注意事项
 

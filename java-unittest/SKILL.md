@@ -17,11 +17,9 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 执行流程（严格按此顺序，禁止使用 Agent 工具）
 
-### 步骤 0：检测 JUnit 版本和 Mock 框架（所有模式必执行）
+### 步骤 0：检测 JUnit 版本和 Mock 框架
 
-在生成测试之前，必须先检测项目使用的 JUnit 版本和静态 Mock 框架。
-
-**缓存机制**：检测结果自动缓存到项目级文件 `.claude/test-framework-cache.json`，后续调用直接读取缓存，跳过检测。
+生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。检测结果自动缓存到 `.claude/test-framework-cache.json`，后续调用直接读取缓存。
 
 **缓存文件格式**：
 ```json
@@ -37,66 +35,64 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 **检测流程**（缓存不存在时执行）：
 
 **1. 检测 JUnit 版本：**
-- `Grep` 搜索 `pom.xml` 中是否包含 `junit-jupiter`（artifactId 为 `junit-jupiter` 或 `junit-jupiter-api`）。
-- 存在 → **JUnit 5 模式**
-- 不存在 → **JUnit 4 模式**
+- `Grep` 搜索 `pom.xml` 中是否包含 `junit-jupiter`（artifactId 为 `junit-jupiter` 或 `junit-jupiter-api`）
+- 存在 → JUnit 5 模式
+- 不存在 → JUnit 4 模式
 
-**2. 统一检测 `mockito-inline` 和 `powermock`：**
+**2. 检测 `mockito-inline` 和 `powermock`：**
 
 | JUnit 版本 | mockito-inline | powermock | 策略 |
 |------------|----------------|-----------|------|
 | JUnit 5 | 有 | - | `@ExtendWith` + `MockedStatic`，阅读 `ref/ref-static-mock.md` |
-| JUnit 5 | 无 | - | 将 `mockito-inline` 依赖添加到 `pom.xml`，然后使用 `MockedStatic`，阅读 `ref/ref-static-mock.md` |
-| JUnit 4 | 有 | - | `@RunWith(MockitoJUnitRunner)` + `MockedStatic`，阅读 `ref/ref-static-mock.md` |
+| JUnit 5 | 无 | - | 添加 `mockito-inline` 依赖到 `pom.xml`，使用 `MockedStatic` |
+| JUnit 4 | 有 | - | `@RunWith(MockitoJUnitRunner)` + `MockedStatic` |
 | JUnit 4 | - | 有 | `@RunWith(PowerMockRunner)` + PowerMock，阅读 `ref/ref-powermock.md` |
-| JUnit 4 | 有 | 有 | 优先 `MockedStatic`，不引入 PowerMock，阅读 `ref/ref-static-mock.md` |
-| JUnit 4 | 无 | 无 | 阅读 `ref/ref-powermock.md`，将「POM 依赖」添加到 `pom.xml`，使用 PowerMock |
+| JUnit 4 | 有 | 有 | 优先 `MockedStatic` |
+| JUnit 4 | 无 | 无 | 阅读 `ref/ref-powermock.md`，添加 POM 依赖，使用 PowerMock |
 
-**3. JUnit 5 模式额外说明：**
+**3. JUnit 5 模式：**
 - 使用 `@ExtendWith(MockitoExtension.class)` 替代 `@RunWith`
 - 使用 `@BeforeEach` / `@AfterEach` 替代 `@Before` / `@After`
 - 禁止 PowerMock，静态方法 Mock 统一使用 `mockStatic()` + `MockedStatic`
-- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`（JUnit 4 同样适用）
+- `@Value` 字段注入使用 `ReflectionTestUtils.setField()`
 
 ### 增量模式（用户未指定目标，非 local）
 
-1. **获取变更文件**：`git diff --name-only master` 拿到变更文件列表，仅关注 Service/Controller/Component 类。
-2. **获取变更内容**：`git diff master -- <文件>` 查看具体 diff，确定变更的方法。
-3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
-4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
-5. **生成增量测试**：仅为 diff 中变更的方法生成测试，不测存量方法。
-6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
+1. **获取变更文件**：`git diff --name-only master -- 'src/main/java/**/*.java' | grep -v 'Test\.java$'`，仅返回非测试类的 Java 源文件。若无变更文件则提示用户并结束。
+2. **批量获取变更内容**：`git diff master -- <文件1> <文件2> ...` 一次性获取所有变更文件的 diff，确定每个文件中变更的方法。禁止逐文件单独 diff。
+3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
+4. **预加载 ref 文件**：扫描所有被测类的依赖类型（Mapper/Redis/Feign/MQ/GraySwitch 等），去重后一次性 `Read` 所需 `ref/ref-xxx.md`，避免同一 ref 文件重复读取。
+5. **批量生成测试**：为所有被测类生成增量测试（仅为 diff 中变更的方法），一次生成完毕。
+6. **批量运行验证**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有测试类，失败则根据报错逐个修复后重跑失败的测试类。
 
 ### commit 模式（用户传入 `commit {commitId}`）
 
 1. **校验 commit id**：`git rev-parse --verify {commitId}` 验证 commit id 是否存在。无效则提示用户检查并重新输入。
-2. **获取变更文件**：`git diff --name-only {commitId} HEAD` 拿到该 commit 之后到 HEAD 的所有变更文件，仅关注 Service/Controller/Component 类。
-   - 若无变更文件：提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，**结束**。
-3. **获取变更内容**：`git diff {commitId} HEAD -- <文件>` 查看具体 diff，确定变更的方法。
-4. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
-5. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
-6. **生成增量测试**：仅为 {commitId}..HEAD 的 diff 中变更的方法生成测试，不测存量方法。
-7. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
+2. **获取变更文件**：`git diff --name-only {commitId} HEAD -- 'src/main/java/**/*.java' | grep -v 'Test\.java$'`，仅返回非测试类的 Java 源文件。若无变更文件则提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，结束。
+3. **批量获取变更内容**：`git diff {commitId} HEAD -- <文件1> <文件2> ...` 一次性获取所有变更文件的 diff，确定每个文件中变更的方法。禁止逐文件单独 diff。
+4. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
+5. **预加载 ref 文件**：扫描所有被测类的依赖类型，去重后一次性 `Read` 所需 `ref/ref-xxx.md`，避免同一 ref 文件重复读取。
+6. **批量生成测试**：为所有被测类生成增量测试（仅为 {commitId}..HEAD 的 diff 中变更的方法），一次生成完毕。
+7. **批量运行验证**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有测试类，失败则根据报错逐个修复后重跑失败的测试类。
 
 ### 本地模式（用户传入 `local` 参数）
 
-1. **获取本地变更文件**：`git diff HEAD --name-only` 拿到工作区与 HEAD 的差异文件列表（包含已暂存和未暂存的变更），仅关注 Service/Controller/Component 类。
-   - 若无变更，尝试 `git status --short` 确认是否有未跟踪的新文件，提醒用户确认是否需要为新增文件生成测试。
-2. **获取变更内容**：`git diff HEAD -- <文件>` 查看具体 diff，确定变更的方法。
-3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构和依赖。
-4. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
-5. **生成增量测试**：仅为本地 diff 中变更的方法生成测试，不测存量方法。
-6. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
+1. **获取本地变更文件**：`git diff HEAD --name-only -- 'src/main/java/**/*.java' | grep -v 'Test\.java$'`，仅返回非测试类的 Java 源文件。若无变更，尝试 `git status --short` 确认是否有未跟踪的新文件，提醒用户确认是否需要为新增文件生成测试。
+2. **批量获取变更内容**：`git diff HEAD -- <文件1> <文件2> ...` 一次性获取所有变更文件的 diff，确定每个文件中变更的方法。禁止逐文件单独 diff。
+3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
+4. **预加载 ref 文件**：扫描所有被测类的依赖类型，去重后一次性 `Read` 所需 `ref/ref-xxx.md`，避免同一 ref 文件重复读取。
+5. **批量生成测试**：为所有被测类生成增量测试（仅为本地 diff 中变更的方法），一次生成完毕。
+6. **批量运行验证**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有测试类，失败则根据报错逐个修复后重跑失败的测试类。
 
 ### 全量模式（用户指定了类名或方法名）
 
-1. **定位目标文件**：用 `Glob` 搜索用户指定的类名（如 `**/XxxService.java`）。
+1. **定位目标文件**：用 `Glob` 在 `src/main/java` 下搜索用户指定的类名（如 `Glob src/main/java/**/XxxService.java`）。
 2. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构。
-3. **按需读取 ref**：根据被测类的依赖类型和步骤 0 的检测结果，用 `Read` 读取对应的 `ref/ref-xxx.md`。
+3. **预加载 ref 文件**：根据被测类的依赖类型和步骤 0 的检测结果，去重后一次性 `Read` 所需 `ref/ref-xxx.md`。
 4. **生成全量测试**：为所有公共方法（或用户指定的方法）生成完整测试，覆盖正常/边界/异常全场景。
-5. **运行验证**：`mvn clean test -Dtest=XxxTest`，失败则修复后重新运行。
+5. **运行验证**：`mvn test -Dtest=XxxTest`，失败则修复后重新运行。
 
-**禁止**：禁止使用 Agent/Explore 等子代理工具搜索项目，直接用 Glob/Grep/Read 获取信息。
+禁止使用 Agent/Explore 等子代理工具搜索项目，直接用 Glob/Grep/Read 获取信息。
 
 ---
 
@@ -104,7 +100,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ### 框架与依赖
 
-框架选择由步骤 0 检测结果自动决定，以下是各模式下的注解和约束速查：
+框架选择由步骤 0 检测结果自动决定：
 
 | 模式 | 测试注解 | 生命周期 | 扩展/Runner | 静态 Mock | 参考文件 |
 |------|----------|----------|-------------|-----------|----------|
@@ -133,9 +129,9 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ### 方法与注释规范
 
-- `public void` + `@Test`，**单方法只测一个逻辑点**，禁止多场景合并。
-- 覆盖正常、边界、异常场景；每个 `throw` 语句必须有独立测试方法。
-- 测试类 `/** */` 说明测试范围；测试方法 `/** */` 说明场景+覆盖行+验证点；关键行 `//` 说明 Mock/断言作用。
+- `public void` + `@Test`，单方法只测一个逻辑点，禁止多场景合并
+- 覆盖正常、边界、异常场景；每个 `throw` 语句必须有独立测试方法
+- 测试类 `/** */` 说明测试范围；测试方法 `/** */` 说明场景+覆盖行+验证点；关键行 `//` 说明 Mock/断言作用
 
 ---
 
@@ -189,7 +185,7 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 - 变更代码：行覆盖率 ≥ 90%，分支覆盖率 ≥ 90%。
 - 未集成 JaCoCo 时，生成插件配置（v0.8.7）并说明插入位置。
-- 报告命令：`mvn clean test jacoco:report`，路径：`target/jacoco-ut/index.html`。
+- 报告命令：`mvn test jacoco:report`，路径：`target/jacoco-ut/index.html`。
 
 ---
 
@@ -198,10 +194,10 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 生成测试后执行以下步骤，详细错误处理方案见 `ref-autofix.md`：
 
 1. **检测 Maven**：`mvn -v`，不存在则询问用户安装地址。
-2. **运行测试**：`mvn clean test -Dtest=XxxTest`
+2. **批量运行测试**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有生成的测试类。若某个测试类失败，根据报错修复后仅重跑该类：`mvn test -Dtest=XxxTest`。
 3. **失败修复**：根据错误类型自动修复（依赖缺失/编译/运行时/断言），详见 `ref/ref-autofix.md`。
-4. **覆盖率报告**：`mvn clean test jacoco:report`
-5. **覆盖率不达标时循环补充**：解析 JaCoCo 报告，若行覆盖率 < 90% 或分支覆盖率 < 90%，定位未覆盖的类/方法/分支，针对性补充测试用例，重新运行步骤 2-4，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
+4. **覆盖率报告**：`mvn test jacoco:report`。
+5. **覆盖率不达标时循环补充**：解析 JaCoCo 报告，若行覆盖率 < 90% 或分支覆盖率 < 90%，定位未覆盖的类/方法/分支，针对性补充测试用例，然后用 `mvn test -Dtest=XxxTest jacoco:report` 重新验证，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
 
 ---
 
