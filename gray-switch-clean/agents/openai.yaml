@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clean Gray Switch"
+  short_description: "Remove gray switch old logic after full rollout confirmed"
+  default_prompt: "Use $gray-switch-clean to scan, confirm, and clean up gray switch old code in Java/Spring Boot services."
