@@ -1,0 +1,25 @@
+java-unit-test/ref/ref-static.md
+  2f23d78e38c59428 1-273
+java-unit-test/SKILL.md
+  2f23d78e38c59428 3,19,21,23-28,37-42,48,58,66,76,78-80,85-94,128-130,195-196,207-210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "d6b271dd2db464404d68d68d70206df212c53c07",
+  "prompts": {
+    "2f23d78e38c59428": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c487bc8c-7718-449d-ac73-ba04dbe3611b",
+        "model": "glm-5.1"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 314,
+      "total_deletions": 20,
+      "accepted_lines": 314,
+      "overriden_lines": 0
+    }
+  }
+}
