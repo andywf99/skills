@@ -18,7 +18,22 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ### 步骤 0：检测 JUnit 版本和 Mock 框架（所有模式必执行）
 
-在生成测试之前，必须先检测项目使用的 JUnit 版本和静态 Mock 框架：
+在生成测试之前，必须先检测项目使用的 JUnit 版本和静态 Mock 框架。
+
+**缓存机制**：检测结果自动缓存到项目级文件 `.claude/test-framework-cache.json`，后续调用直接读取缓存，跳过检测。
+
+**缓存文件格式**：
+```json
+{
+  "junitVersion": "4",
+  "mockitoInline": false,
+  "powermock": false,
+  "jacocoIntegrated": true,
+  "detectedAt": "2026-04-24T14:30:00"
+}
+```
+
+**检测流程**（缓存不存在时执行）：
 
 **1. 检测 JUnit 版本：**
 - `Grep` 搜索 `pom.xml` 中是否包含 `junit-jupiter`（artifactId 为 `junit-jupiter` 或 `junit-jupiter-api`）。
@@ -216,3 +231,12 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 - [ ] 测试可运行且通过
 - [ ] 覆盖率达标（行 ≥ 90%、分支 ≥ 90%）
 - [ ] 已提供运行命令和报告路径
+
+
+## 效率优化原则                                                                
+                                                                                                         
+1. **先运行现有测试**：在生成新测试前，先执行 `mvn test -Dtest=XxxTest`，检查是否已有测试用例及编译错误        
+2. **检查现有覆盖**：用 `Grep` 快速搜索测试文件中是否已有目标方法的测试（如 `grep "test_queryTransportation"`）
+3. **批量修复同类错误**：编译错误通常是同一类问题，应一次性批量替换而非逐个修复                          
+4. **精确定位代码**：用 `Grep -n` 定位关键代码行号，再用 `Read offset/limit` 定向读取，避免分段读取大文件
+5. **复用已有测试结构**：若测试类已存在，优先修复编译错误并补充缺失场景，而非重写整个测试类
