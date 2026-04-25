@@ -15,15 +15,25 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Bash(python:scripts/*)", "Read", 
 
 ---
 
+## 脚本说明
+
+本 skill 在 `scripts/` 目录下提供了 5 个 Python 脚本，用于自动化机械性操作（框架检测、变更采集、依赖扫描、测试解析、覆盖率解析）。调用时使用 skill 目录的绝对路径：
+
+```bash
+python ~/.claude/skills/java-unittest/scripts/<script>.py [参数]
+```
+
+其中 `~/.claude/skills/java-unittest/scripts/` 即本 skill 的 scripts 目录。下文中的脚本调用均省略此完整前缀，仅写脚本名和参数，实际执行时必须补全路径。
+
 ## 执行流程
 
 ### 步骤 0：检测 JUnit 版本和 Mock 框架
 
-生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。使用 `scripts/detect_framework.py` 脚本自动完成检测，结果自动缓存到 `.claude/test-framework-cache.json`（7 天有效期）。
+生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。使用 `~/.claude/skills/java-unittest/scripts/detect_framework.py` 脚本自动完成检测，结果自动缓存到 `.claude/test-framework-cache.json`（7 天有效期）。
 
 **执行方式**：
 ```bash
-python scripts/detect_framework.py {projectRoot}
+python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
 ```
 
 脚本输出 JSON，包含以下字段：
@@ -53,13 +63,13 @@ python scripts/detect_framework.py {projectRoot}
 
 1. **采集变更**：
    ```bash
-   python scripts/collect_changes.py --mode diff --base master {projectRoot}
+   python ~/.claude/skills/java-unittest/scripts/collect_changes.py --mode diff --base master {projectRoot}
    ```
    脚本自动执行 `git diff`，过滤测试类，解析变更方法，输出结构化 JSON。若 `files` 为空则提示用户并结束。
 
 2. **扫描依赖**：
    ```bash
-   python scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
+   python ~/.claude/skills/java-unittest/scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
    ```
    将步骤 1 输出中的文件路径传入，脚本自动识别依赖类型并输出需要的 `ref/ref-xxx.md` 列表。去重后一次性 `Read` 所需 ref 文件。
 
@@ -69,13 +79,13 @@ python scripts/detect_framework.py {projectRoot}
 
 5. **运行验证**：
    ```bash
-   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
    ```
    脚本自动运行 `mvn test`，解析输出，分类错误，输出结构化错误报告。根据 `category` 和 `priority` 字段逐个修复后重跑。
 
 6. **覆盖率检查**：
    ```bash
-   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
    脚本自动运行 `mvn test jacoco:report`，解析 XML 报告，输出未覆盖的方法和行号。针对性补充测试用例，循环直到达标。
 
@@ -83,13 +93,13 @@ python scripts/detect_framework.py {projectRoot}
 
 1. **采集变更**：
    ```bash
-   python scripts/collect_changes.py --mode commit --base {commitId} {projectRoot}
+   python ~/.claude/skills/java-unittest/scripts/collect_changes.py --mode commit --base {commitId} {projectRoot}
    ```
    脚本自动校验 commit id 有效性，执行 `git diff {commitId}..HEAD`，过滤测试类，解析变更方法。若 `files` 为空则提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，结束。
 
 2. **扫描依赖**：
    ```bash
-   python scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
+   python ~/.claude/skills/java-unittest/scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
    ```
 
 3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
@@ -98,25 +108,25 @@ python scripts/detect_framework.py {projectRoot}
 
 5. **运行验证**：
    ```bash
-   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
    ```
 
 6. **覆盖率检查**：
    ```bash
-   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
 
 ### 本地模式（用户传入 `local` 参数）
 
 1. **采集变更**：
    ```bash
-   python scripts/collect_changes.py --mode local {projectRoot}
+   python ~/.claude/skills/java-unittest/scripts/collect_changes.py --mode local {projectRoot}
    ```
    脚本自动执行 `git diff HEAD`，过滤测试类，解析变更方法。同时检查未跟踪的新文件（`untracked` 字段），提醒用户确认是否需要为新增文件生成测试。
 
 2. **扫描依赖**：
    ```bash
-   python scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
+   python ~/.claude/skills/java-unittest/scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
    ```
 
 3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
@@ -125,12 +135,12 @@ python scripts/detect_framework.py {projectRoot}
 
 5. **运行验证**：
    ```bash
-   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
    ```
 
 6. **覆盖率检查**：
    ```bash
-   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
 
 ### 全量模式（用户指定了类名或方法名）
@@ -139,7 +149,7 @@ python scripts/detect_framework.py {projectRoot}
 
 2. **扫描依赖**：
    ```bash
-   python scripts/scan_dependencies.py {projectRoot} targetFile.java
+   python ~/.claude/skills/java-unittest/scripts/scan_dependencies.py {projectRoot} targetFile.java
    ```
    脚本自动识别依赖类型并输出需要的 `ref/ref-xxx.md` 列表，去重后一次性 `Read` 所需 ref 文件。
 
@@ -149,15 +159,15 @@ python scripts/detect_framework.py {projectRoot}
 
 5. **运行验证**：
    ```bash
-   python scripts/parse_test_result.py {projectRoot} --tests "XxxTest"
+   python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "XxxTest"
    ```
 
 6. **覆盖率检查**：
    ```bash
-   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
 
-信息获取优先使用 `scripts/` 下的脚本，脚本无法覆盖的场景再用 Glob/Grep/Read 获取信息。
+信息获取优先使用 `~/.claude/skills/java-unittest/scripts/` 下的脚本，脚本无法覆盖的场景再用 Glob/Grep/Read 获取信息。
 
 ---
 
@@ -260,7 +270,7 @@ python scripts/detect_framework.py {projectRoot}
 
 1. **运行测试并解析结果**：
    ```bash
-   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
    ```
    脚本自动检测 Maven、运行 `mvn test`、解析输出、分类错误。
 
@@ -269,15 +279,15 @@ python scripts/detect_framework.py {projectRoot}
    - `class_not_found` / `method_not_found`：检查 Mockito 版本冲突
    - `mock_not_injected`：检查 Mock 注入和初始化
    - `assertion_mismatch`：调整断言值
-   - 修复后仅重跑失败类：`python scripts/parse_test_result.py {projectRoot} --tests "XxxTest" --no-clean`
+   - 修复后仅重跑失败类：`python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "XxxTest" --no-clean`
 
 3. **覆盖率检查**：
    ```bash
-   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
    脚本自动运行 `mvn test jacoco:report`，解析 XML 报告。
 
-4. **覆盖率不达标时循环补充**：根据脚本 `belowThreshold` 字段中未覆盖的方法和行号，针对性补充测试用例，然后用 `python scripts/parse_coverage.py {projectRoot} --threshold 90 --no-run` 重新验证，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
+4. **覆盖率不达标时循环补充**：根据脚本 `belowThreshold` 字段中未覆盖的方法和行号，针对性补充测试用例，然后用 `python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90 --no-run` 重新验证，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
 
 ---
 

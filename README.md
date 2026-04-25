@@ -61,6 +61,7 @@ skills/
 | `doc-flowchart` | 将需求内容转换为 Mermaid Flowchart 流程图 | 生成流程图、需求转流程图、业务流程可视化 |
 | `doc-whitepaper-tech` | 扫描 Java 项目结构并生成技术白皮书文档 | 生成项目结构文档、梳理 Controller/Service/Mapper/Feign 清单 |
 | `doc-whitepaper-product` | 根据项目代码结构自动生成完整的产品白皮书文档 | 生成产品白皮书、输出产品功能文档 |
+| `doc-jt-spec` | 将 PRD 需求文档转换为极兔概要设计文档，对话式 Review/Research/Planning 三阶段，产物落到 OpenSpec | PRD 转 TRD、概要设计、技术方案、需求复杂需逐阶段确认 |
 | `doc-sqs-sql` | 生成和审查服务质量生产数存发版 SQL / ES mapping 文档 | 补发版信息、编写生产 SQL、校验 ES mapping 与数存变更 |
 
 ### infra — 基础设施
