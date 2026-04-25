@@ -1,5 +1,5 @@
 ---
-name: jt-spec
+name: doc-jt-spec
 description: 将 PRD 需求文档转换为极兔概要设计文档。适用于用户要求生成 TRD、概要设计、技术方案，或提供 PRD 文档路径时。流程采用对话式 Review/Research/Planning，并把阶段结论落到 OpenSpec proposal/specs/design/tasks，最终输出极兔概要设计.md；保留严格阶段确认，但不要求用户打开 review.md/research.md/plan.md 文件交互。
 ---
 

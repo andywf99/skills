@@ -1,7 +1,7 @@
 ---
 name: java-unittest
 description: 为 Java/Spring Boot 项目生成单元测试，遵循阿里命名规范。自动检测 JUnit 版本（JUnit 4 或 JUnit 5），使用 Mockito + mockito-inline/PowerMock（JUnit 4）或 Mockito/MockedStatic（JUnit 5）。支持增量模式（git diff vs master）、commit 模式（指定 commit id 之后的所有变更）、本地模式（git diff HEAD 未提交变更）和全量模式（用户指定类名/方法名）。适用于用户要求生成单元测试、补覆盖率、审查测试代码的场景。
-allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "Write"]
+allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Bash(python:scripts/*)", "Read", "Glob", "Grep", "Edit", "Write"]
 ---
 
 # Java 单元测试生成规范
@@ -15,42 +15,35 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ---
 
-## 执行流程（严格按此顺序，禁止使用 Agent 工具）
+## 执行流程
 
 ### 步骤 0：检测 JUnit 版本和 Mock 框架
 
-生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。检测结果自动缓存到 `.claude/test-framework-cache.json`，后续调用直接读取缓存。
+生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。使用 `scripts/detect_framework.py` 脚本自动完成检测，结果自动缓存到 `.claude/test-framework-cache.json`（7 天有效期）。
 
-**缓存文件格式**：
-```json
-{
-  "junitVersion": "4",
-  "mockitoInline": false,
-  "powermock": false,
-  "jacocoIntegrated": true,
-  "detectedAt": "2026-04-24T14:30:00"
-}
+**执行方式**：
+```bash
+python scripts/detect_framework.py {projectRoot}
 ```
 
-**检测流程**（缓存不存在时执行）：
+脚本输出 JSON，包含以下字段：
+- `junitVersion`: "4" 或 "5"
+- `mockitoInline`: 是否存在 mockito-inline
+- `powermock`: 是否存在 PowerMock
+- `jacocoIntegrated`: 是否集成 JaCoCo
+- `mockStrategy`: 框架策略标识
 
-**1. 检测 JUnit 版本：**
-- `Grep` 搜索 `pom.xml` 中是否包含 `junit-jupiter`（artifactId 为 `junit-jupiter` 或 `junit-jupiter-api`）
-- 存在 → JUnit 5 模式
-- 不存在 → JUnit 4 模式
+**根据 `mockStrategy` 字段确定后续方案**：
 
-**2. 检测 `mockito-inline` 和 `powermock`：**
+| mockStrategy | JUnit 版本 | Mock 方案 | 参考文件 |
+|---|---|---|---|
+| `ExtendWith_MockedStatic` | JUnit 5 | `@ExtendWith` + `MockedStatic` | `ref/ref-static-mock.md` |
+| `ExtendWith_MockedStatic_NeedInline` | JUnit 5 | 需添加 `mockito-inline` 依赖，然后使用 `MockedStatic` | `ref/ref-static-mock.md` |
+| `RunWith_MockedStatic` | JUnit 4 | `@RunWith(MockitoJUnitRunner)` + `MockedStatic` | `ref/ref-static-mock.md` |
+| `RunWith_PowerMock` | JUnit 4 | `@RunWith(PowerMockRunner)` + PowerMock | `ref/ref-powermock.md` |
+| `RunWith_PowerMock_NeedDeps` | JUnit 4 | 需添加 POM 依赖，使用 PowerMock | `ref/ref-powermock.md` |
 
-| JUnit 版本 | mockito-inline | powermock | 策略 |
-|------------|----------------|-----------|------|
-| JUnit 5 | 有 | - | `@ExtendWith` + `MockedStatic`，阅读 `ref/ref-static-mock.md` |
-| JUnit 5 | 无 | - | 添加 `mockito-inline` 依赖到 `pom.xml`，使用 `MockedStatic` |
-| JUnit 4 | 有 | - | `@RunWith(MockitoJUnitRunner)` + `MockedStatic` |
-| JUnit 4 | - | 有 | `@RunWith(PowerMockRunner)` + PowerMock，阅读 `ref/ref-powermock.md` |
-| JUnit 4 | 有 | 有 | 优先 `MockedStatic` |
-| JUnit 4 | 无 | 无 | 阅读 `ref/ref-powermock.md`，添加 POM 依赖，使用 PowerMock |
-
-**3. JUnit 5 模式：**
+**JUnit 5 通用规则**：
 - 使用 `@ExtendWith(MockitoExtension.class)` 替代 `@RunWith`
 - 使用 `@BeforeEach` / `@AfterEach` 替代 `@Before` / `@After`
 - 禁止 PowerMock，静态方法 Mock 统一使用 `mockStatic()` + `MockedStatic`
@@ -58,41 +51,113 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ### 增量模式（用户未指定目标，非 local）
 
-1. **获取变更文件**：`git diff --name-only master -- 'src/main/java/**/*.java' | grep -v 'Test\.java$'`，仅返回非测试类的 Java 源文件。若无变更文件则提示用户并结束。
-2. **批量获取变更内容**：`git diff master -- <文件1> <文件2> ...` 一次性获取所有变更文件的 diff，确定每个文件中变更的方法。禁止逐文件单独 diff。
+1. **采集变更**：
+   ```bash
+   python scripts/collect_changes.py --mode diff --base master {projectRoot}
+   ```
+   脚本自动执行 `git diff`，过滤测试类，解析变更方法，输出结构化 JSON。若 `files` 为空则提示用户并结束。
+
+2. **扫描依赖**：
+   ```bash
+   python scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
+   ```
+   将步骤 1 输出中的文件路径传入，脚本自动识别依赖类型并输出需要的 `ref/ref-xxx.md` 列表。去重后一次性 `Read` 所需 ref 文件。
+
 3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
-4. **预加载 ref 文件**：扫描所有被测类的依赖类型（Mapper/Redis/Feign/MQ/GraySwitch 等），去重后一次性 `Read` 所需 `ref/ref-xxx.md`，避免同一 ref 文件重复读取。
-5. **批量生成测试**：为所有被测类生成增量测试（仅为 diff 中变更的方法），一次生成完毕。
-6. **批量运行验证**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有测试类，失败则根据报错逐个修复后重跑失败的测试类。
+
+4. **批量生成测试**：为所有被测类生成增量测试（仅为 diff 中变更的方法），一次生成完毕。
+
+5. **运行验证**：
+   ```bash
+   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   ```
+   脚本自动运行 `mvn test`，解析输出，分类错误，输出结构化错误报告。根据 `category` 和 `priority` 字段逐个修复后重跑。
+
+6. **覆盖率检查**：
+   ```bash
+   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
+   脚本自动运行 `mvn test jacoco:report`，解析 XML 报告，输出未覆盖的方法和行号。针对性补充测试用例，循环直到达标。
 
 ### commit 模式（用户传入 `commit {commitId}`）
 
-1. **校验 commit id**：`git rev-parse --verify {commitId}` 验证 commit id 是否存在。无效则提示用户检查并重新输入。
-2. **获取变更文件**：`git diff --name-only {commitId} HEAD -- 'src/main/java/**/*.java' | grep -v 'Test\.java$'`，仅返回非测试类的 Java 源文件。若无变更文件则提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，结束。
-3. **批量获取变更内容**：`git diff {commitId} HEAD -- <文件1> <文件2> ...` 一次性获取所有变更文件的 diff，确定每个文件中变更的方法。禁止逐文件单独 diff。
-4. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
-5. **预加载 ref 文件**：扫描所有被测类的依赖类型，去重后一次性 `Read` 所需 `ref/ref-xxx.md`，避免同一 ref 文件重复读取。
-6. **批量生成测试**：为所有被测类生成增量测试（仅为 {commitId}..HEAD 的 diff 中变更的方法），一次生成完毕。
-7. **批量运行验证**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有测试类，失败则根据报错逐个修复后重跑失败的测试类。
+1. **采集变更**：
+   ```bash
+   python scripts/collect_changes.py --mode commit --base {commitId} {projectRoot}
+   ```
+   脚本自动校验 commit id 有效性，执行 `git diff {commitId}..HEAD`，过滤测试类，解析变更方法。若 `files` 为空则提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，结束。
+
+2. **扫描依赖**：
+   ```bash
+   python scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
+   ```
+
+3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
+
+4. **批量生成测试**：为所有被测类生成增量测试（仅为 {commitId}..HEAD 的 diff 中变更的方法），一次生成完毕。
+
+5. **运行验证**：
+   ```bash
+   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   ```
+
+6. **覆盖率检查**：
+   ```bash
+   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
 
 ### 本地模式（用户传入 `local` 参数）
 
-1. **获取本地变更文件**：`git diff HEAD --name-only -- 'src/main/java/**/*.java' | grep -v 'Test\.java$'`，仅返回非测试类的 Java 源文件。若无变更，尝试 `git status --short` 确认是否有未跟踪的新文件，提醒用户确认是否需要为新增文件生成测试。
-2. **批量获取变更内容**：`git diff HEAD -- <文件1> <文件2> ...` 一次性获取所有变更文件的 diff，确定每个文件中变更的方法。禁止逐文件单独 diff。
+1. **采集变更**：
+   ```bash
+   python scripts/collect_changes.py --mode local {projectRoot}
+   ```
+   脚本自动执行 `git diff HEAD`，过滤测试类，解析变更方法。同时检查未跟踪的新文件（`untracked` 字段），提醒用户确认是否需要为新增文件生成测试。
+
+2. **扫描依赖**：
+   ```bash
+   python scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
+   ```
+
 3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
-4. **预加载 ref 文件**：扫描所有被测类的依赖类型，去重后一次性 `Read` 所需 `ref/ref-xxx.md`，避免同一 ref 文件重复读取。
-5. **批量生成测试**：为所有被测类生成增量测试（仅为本地 diff 中变更的方法），一次生成完毕。
-6. **批量运行验证**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有测试类，失败则根据报错逐个修复后重跑失败的测试类。
+
+4. **批量生成测试**：为所有被测类生成增量测试（仅为本地 diff 中变更的方法），一次生成完毕。
+
+5. **运行验证**：
+   ```bash
+   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   ```
+
+6. **覆盖率检查**：
+   ```bash
+   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
 
 ### 全量模式（用户指定了类名或方法名）
 
 1. **定位目标文件**：用 `Glob` 在 `src/main/java` 下搜索用户指定的类名（如 `Glob src/main/java/**/XxxService.java`）。
-2. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构。
-3. **预加载 ref 文件**：根据被测类的依赖类型和步骤 0 的检测结果，去重后一次性 `Read` 所需 `ref/ref-xxx.md`。
-4. **生成全量测试**：为所有公共方法（或用户指定的方法）生成完整测试，覆盖正常/边界/异常全场景。
-5. **运行验证**：`mvn test -Dtest=XxxTest`，失败则修复后重新运行。
 
-禁止使用 Agent/Explore 等子代理工具搜索项目，直接用 Glob/Grep/Read 获取信息。
+2. **扫描依赖**：
+   ```bash
+   python scripts/scan_dependencies.py {projectRoot} targetFile.java
+   ```
+   脚本自动识别依赖类型并输出需要的 `ref/ref-xxx.md` 列表，去重后一次性 `Read` 所需 ref 文件。
+
+3. **读取被测类**：用 `Read` 直接读取目标源文件，理解完整类结构。
+
+4. **生成全量测试**：为所有公共方法（或用户指定的方法）生成完整测试，覆盖正常/边界/异常全场景。
+
+5. **运行验证**：
+   ```bash
+   python scripts/parse_test_result.py {projectRoot} --tests "XxxTest"
+   ```
+
+6. **覆盖率检查**：
+   ```bash
+   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
+
+信息获取优先使用 `scripts/` 下的脚本，脚本无法覆盖的场景再用 Glob/Grep/Read 获取信息。
 
 ---
 
@@ -191,13 +256,28 @@ allowed-tools: ["Bash(mvn:*)", "Bash(git:*)", "Read", "Glob", "Grep", "Edit", "W
 
 ## 7. 测试运行与验证
 
-生成测试后执行以下步骤，详细错误处理方案见 `ref-autofix.md`：
+生成测试后使用脚本自动运行和解析，详细错误处理方案见 `ref-autofix.md`：
 
-1. **检测 Maven**：`mvn -v`，不存在则询问用户安装地址。
-2. **批量运行测试**：`mvn test -Dtest=Class1Test,Class2Test,Class3Test` 一次性运行所有生成的测试类。若某个测试类失败，根据报错修复后仅重跑该类：`mvn test -Dtest=XxxTest`。
-3. **失败修复**：根据错误类型自动修复（依赖缺失/编译/运行时/断言），详见 `ref/ref-autofix.md`。
-4. **覆盖率报告**：`mvn test jacoco:report`。
-5. **覆盖率不达标时循环补充**：解析 JaCoCo 报告，若行覆盖率 < 90% 或分支覆盖率 < 90%，定位未覆盖的类/方法/分支，针对性补充测试用例，然后用 `mvn test -Dtest=XxxTest jacoco:report` 重新验证，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
+1. **运行测试并解析结果**：
+   ```bash
+   python scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
+   ```
+   脚本自动检测 Maven、运行 `mvn test`、解析输出、分类错误。
+
+2. **失败修复**：根据脚本输出的 `category` 和 `priority` 字段，按优先级修复：
+   - `missing_dependency` / `compilation_error`：添加缺失依赖，详见 `ref/ref-autofix.md`
+   - `class_not_found` / `method_not_found`：检查 Mockito 版本冲突
+   - `mock_not_injected`：检查 Mock 注入和初始化
+   - `assertion_mismatch`：调整断言值
+   - 修复后仅重跑失败类：`python scripts/parse_test_result.py {projectRoot} --tests "XxxTest" --no-clean`
+
+3. **覆盖率检查**：
+   ```bash
+   python scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
+   脚本自动运行 `mvn test jacoco:report`，解析 XML 报告。
+
+4. **覆盖率不达标时循环补充**：根据脚本 `belowThreshold` 字段中未覆盖的方法和行号，针对性补充测试用例，然后用 `python scripts/parse_coverage.py {projectRoot} --threshold 90 --no-run` 重新验证，直到覆盖率达标或确认无法覆盖（需注释说明原因）。
 
 ---
 

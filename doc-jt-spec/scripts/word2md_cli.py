@@ -8,10 +8,10 @@ Usage:
     Word2MD_CLI.exe input.docx output.md
 """
 
-import os
-import sys
 import argparse
+import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Tuple, List
 
