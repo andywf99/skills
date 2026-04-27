@@ -11,40 +11,61 @@
 
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-def run_jacoco_report(project_root: Path) -> str:
-    """运行 mvn test jacoco:report 并返回输出。"""
-    cmd = ["mvn", "test", "jacoco:report"]
-    print(f"执行: {' '.join(cmd)}", file=sys.stderr)
+def find_maven(project_root: Path) -> str | None:
+    """查找用户系统环境中的 Maven 可执行文件。
 
-    result = subprocess.run(
-        cmd,
-        cwd=str(project_root),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=600,
-    )
+    查找顺序：
+    1. 项目目录下的 mvnw / mvnw.cmd（Maven Wrapper）
+    2. shutil.which 在 PATH 中查找 mvn / mvn.cmd
+    3. MAVEN_HOME / M2_HOME 环境变量下的 bin 目录
+    """
+    is_windows = sys.platform == "win32"
 
-    return result.stdout + result.stderr
+    # 1. Maven Wrapper
+    if is_windows:
+        wrapper = project_root / "mvnw.cmd"
+    else:
+        wrapper = project_root / "mvnw"
+    if wrapper.exists():
+        return str(wrapper)
+
+    # 2. PATH 中查找
+    for name in ("mvn.cmd", "mvn.bat", "mvn") if is_windows else ("mvn",):
+        found = shutil.which(name)
+        if found:
+            return found
+
+    # 3. MAVEN_HOME / M2_HOME
+    for env_var in ("MAVEN_HOME", "M2_HOME"):
+        home = os.environ.get(env_var)
+        if home:
+            home_path = Path(home)
+            if is_windows:
+                candidate = home_path / "bin" / "mvn.cmd"
+            else:
+                candidate = home_path / "bin" / "mvn"
+            if candidate.exists():
+                return str(candidate)
+
+    return None
 
 
 def find_jacoco_xml(project_root: Path) -> Path | None:
     """查找 JaCoCo XML 报告文件。"""
-    # 常见路径
     candidates = [
         project_root / "target" / "site" / "jacoco" / "jacoco.xml",
         project_root / "target" / "site" / "jacoco-ut" / "jacoco.xml",
         project_root / "target" / "jacoco-ut" / "jacoco.xml",
     ]
-    # 也搜索子模块
     for d in (project_root / "target").glob("*/site/jacoco"):
         candidates.append(d / "jacoco.xml")
     for d in (project_root / "target").glob("*/site/jacoco-ut"):
@@ -74,7 +95,6 @@ def parse_jacoco_xml(xml_path: Path) -> list[dict]:
             class_name = f"{pkg_name}.{cls.get('name', '')}"
             source_file = cls.get("sourcefilename", "")
 
-            # 收集方法和行覆盖率
             methods = []
             line_covered = 0
             line_missed = 0
@@ -85,7 +105,6 @@ def parse_jacoco_xml(xml_path: Path) -> list[dict]:
 
             for method in cls.findall("method"):
                 method_name = method.get("name", "")
-                method_desc = method.get("desc", "")
                 m_line_covered = 0
                 m_line_missed = 0
 
@@ -110,24 +129,19 @@ def parse_jacoco_xml(xml_path: Path) -> list[dict]:
                     "lineMissed": m_line_missed,
                 })
 
-            # 收集未覆盖行号
             for line in cls.findall("line"):
                 line_nr = int(line.get("nr", "0"))
-                line_mi = int(line.get("mi", "0"))  # missed instructions
-                line_ci = int(line.get("ci", "0"))  # covered instructions
-                line_mb = int(line.get("mb", "0"))  # missed branches
-                line_cb = int(line.get("cb", "0"))  # covered branches
+                line_mi = int(line.get("mi", "0"))
+                line_ci = int(line.get("ci", "0"))
 
                 if line_mi > 0 and line_ci == 0:
                     uncovered_lines.append(line_nr)
 
-                # 统计行级覆盖率
                 if line_ci > 0:
                     line_covered += 1
                 else:
                     line_missed += 1
 
-            # 类级别的 counter
             for counter in cls.findall("counter"):
                 counter_type = counter.get("type", "")
                 covered = int(counter.get("covered", "0"))
@@ -136,14 +150,12 @@ def parse_jacoco_xml(xml_path: Path) -> list[dict]:
                     branch_covered = covered
                     branch_missed = missed
 
-            # 计算覆盖率
             total_lines = line_covered + line_missed
             line_pct = (line_covered / total_lines * 100) if total_lines > 0 else 100.0
 
             total_branches = branch_covered + branch_missed
             branch_pct = (branch_covered / total_branches * 100) if total_branches > 0 else 100.0
 
-            # 过滤掉不需要测试的类（如 DTO、Config、常量类）
             simple_class_name = class_name.split(".")[-1]
             skip_suffixes = ("DTO", "Dto", "VO", "Vo", "PO", "Po", "BO", "Bo", "Config", "Configuration",
                            "Constant", "Constants", "Enum", "Application", "Request", "Response")
@@ -166,17 +178,34 @@ def parse_jacoco_xml(xml_path: Path) -> list[dict]:
     return classes
 
 
+def run_maven(mvn_cmd: str, project_root: Path, goals: list[str], timeout: int = 600) -> str:
+    """运行 Maven 命令并返回输出。"""
+    cmd = [mvn_cmd] + goals
+    print(f"执行: {' '.join(cmd)}", file=sys.stderr)
+
+    env = os.environ.copy()
+
+    result = subprocess.run(
+        cmd,
+        cwd=str(project_root),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+        env=env,
+    )
+
+    return result.stdout + result.stderr
+
+
 def main():
     parser = argparse.ArgumentParser(description="运行 JaCoCo 报告并解析覆盖率")
     parser.add_argument("project", type=Path, help="项目根目录路径")
     parser.add_argument("--threshold", type=float, default=90, help="覆盖率阈值（百分比，默认 90）")
     parser.add_argument("--no-run", action="store_true", help="不运行 jacoco:report，直接解析已有的 XML 报告")
-    parser.add_argument(
-        "--xml-path",
-        type=Path,
-        default=None,
-        help="JaCoCo XML 报告路径（默认自动查找）",
-    )
+    parser.add_argument("--xml-path", type=Path, default=None, help="JaCoCo XML 报告路径（默认自动查找）")
+    parser.add_argument("--mvn", type=str, default=None, help="Maven 可执行文件路径（默认自动检测）")
 
     args = parser.parse_args()
 
@@ -186,21 +215,16 @@ def main():
 
     # 运行 JaCoCo 报告
     if not args.no_run:
-        output = run_jacoco_report(args.project)
-        # 检查是否 BUILD SUCCESS
-        if "BUILD SUCCESS" not in output:
-            # 尝试仅运行 jacoco:report（测试可能已经运行过）
-            result2 = subprocess.run(
-                ["mvn", "jacoco:report"],
-                cwd=str(args.project),
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=120,
-            )
-            if "BUILD SUCCESS" not in result2.stdout:
-                print("JaCoCo 报告生成失败，尝试直接查找已有报告...", file=sys.stderr)
+        mvn_cmd = args.mvn or find_maven(args.project)
+        if not mvn_cmd:
+            print("Maven 未找到，跳过报告生成，尝试直接查找已有报告...", file=sys.stderr)
+        else:
+            print(f"使用 Maven: {mvn_cmd}", file=sys.stderr)
+            output = run_maven(mvn_cmd, args.project, ["test", "jacoco:report"])
+            if "BUILD SUCCESS" not in output:
+                output2 = run_maven(mvn_cmd, args.project, ["jacoco:report"], timeout=120)
+                if "BUILD SUCCESS" not in output2:
+                    print("JaCoCo 报告生成失败，尝试直接查找已有报告...", file=sys.stderr)
 
     # 查找 XML 报告
     xml_path = args.xml_path

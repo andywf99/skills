@@ -11,7 +11,9 @@
 
 import argparse
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -34,6 +36,44 @@ ERROR_CATEGORIES = [
 ]
 
 
+def find_maven(project_root: Path) -> str | None:
+    """查找用户系统环境中的 Maven 可执行文件。
+
+    查找顺序：
+    1. 项目目录下的 mvnw / mvnw.cmd（Maven Wrapper）
+    2. shutil.which 在 PATH 中查找 mvn / mvn.cmd
+    3. MAVEN_HOME / M2_HOME 环境变量下的 bin 目录
+    """
+    # 1. Maven Wrapper
+    is_windows = sys.platform == "win32"
+    if is_windows:
+        wrapper = project_root / "mvnw.cmd"
+    else:
+        wrapper = project_root / "mvnw"
+    if wrapper.exists():
+        return str(wrapper)
+
+    # 2. PATH 中查找
+    for name in ("mvn.cmd", "mvn.bat", "mvn") if is_windows else ("mvn",):
+        found = shutil.which(name)
+        if found:
+            return found
+
+    # 3. MAVEN_HOME / M2_HOME
+    for env_var in ("MAVEN_HOME", "M2_HOME"):
+        home = os.environ.get(env_var)
+        if home:
+            home_path = Path(home)
+            if is_windows:
+                candidate = home_path / "bin" / "mvn.cmd"
+            else:
+                candidate = home_path / "bin" / "mvn"
+            if candidate.exists():
+                return str(candidate)
+
+    return None
+
+
 def classify_error(error_type: str, message: str, stack_trace: str) -> tuple[str, int]:
     """分类错误类型，返回 (category, priority)。"""
     combined = f"{error_type} {message} {stack_trace}"
@@ -47,7 +87,7 @@ def parse_maven_output(output: str) -> dict:
     """解析 Maven 测试输出。"""
     # 解析测试摘要: Tests run: X, Failures: Y, Errors: Z, Skipped: W
     summary_pattern = re.compile(
-        r"Tests run:\s*(\d+),\s*Failures:\s*(\d+),\s*Errors:\s*((\d+)),\s*Skipped:\s*(\d+)"
+        r"Tests run:\s*(\d+),\s*Failures:\s*(\d+),\s*Errors:\s*(\d+),\s*Skipped:\s*(\d+)"
     )
 
     total = failures_count = errors_count = skipped = 0
@@ -172,14 +212,17 @@ def parse_maven_output(output: str) -> dict:
     }
 
 
-def run_maven_test(project_root: Path, test_classes: str, clean: bool = True) -> str:
+def run_maven_test(mvn_cmd: str, project_root: Path, test_classes: str, clean: bool = True) -> str:
     """运行 Maven 测试并返回输出。"""
-    cmd = ["mvn"]
+    cmd = [mvn_cmd]
     if clean:
         cmd.append("clean")
     cmd.extend(["test", f"-Dtest={test_classes}", "-pl", "."])
 
     print(f"执行: {' '.join(cmd)}", file=sys.stderr)
+
+    # 继承用户完整环境变量，确保 JAVA_HOME 等生效
+    env = os.environ.copy()
 
     result = subprocess.run(
         cmd,
@@ -189,6 +232,7 @@ def run_maven_test(project_root: Path, test_classes: str, clean: bool = True) ->
         encoding="utf-8",
         errors="replace",
         timeout=600,  # 10 分钟超时
+        env=env,
     )
 
     return result.stdout + result.stderr
@@ -200,6 +244,7 @@ def main():
     parser.add_argument("--tests", required=True, help="测试类列表，逗号分隔（如 Class1Test,Class2Test）")
     parser.add_argument("--no-run", action="store_true", help="不运行测试，从 stdin 读取 Maven 输出进行解析")
     parser.add_argument("--no-clean", action="store_true", help="运行测试时不执行 clean")
+    parser.add_argument("--mvn", type=str, default=None, help="Maven 可执行文件路径（默认自动检测）")
 
     args = parser.parse_args()
 
@@ -211,17 +256,11 @@ def main():
     if args.no_run:
         maven_output = sys.stdin.read()
     else:
-        # 检测 Maven
-        try:
-            subprocess.run(
-                ["mvn", "-v"],
-                capture_output=True,
-                check=True,
-                timeout=10,
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        # 查找 Maven
+        mvn_cmd = args.mvn or find_maven(args.project)
+        if not mvn_cmd:
             result = {
-                "error": "Maven 未安装或不在 PATH 中",
+                "error": "Maven 未找到：PATH 中无 mvn，项目目录无 mvnw，且未设置 MAVEN_HOME/M2_HOME",
                 "total": 0,
                 "passed": 0,
                 "failed": 0,
@@ -233,8 +272,10 @@ def main():
             print(json.dumps(result, ensure_ascii=False))
             sys.exit(0)
 
+        print(f"使用 Maven: {mvn_cmd}", file=sys.stderr)
+
         maven_output = run_maven_test(
-            args.project, args.tests, clean=not args.no_clean
+            mvn_cmd, args.project, args.tests, clean=not args.no_clean
         )
 
     # 解析结果
