@@ -65,7 +65,6 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)  // 委托给 MockitoJUnitRunner
-@PowerMockIgnore({"com.alibaba.fastjson.*", "javax.xml.*", "org.xml.*", "org.w3c.*"})  // 忽略 FastJSON
 public class XxxServiceImplTest {
 
     @InjectMocks
@@ -181,7 +180,6 @@ PowerMockito.when(GrayUtils.isGray()).thenReturn(true);
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)
 @PrepareForTest({GrayUtils.class})
-@PowerMockIgnore({"com.alibaba.fastjson.*", "javax.xml.*", "org.xml.*", "org.w3c.*", "org.jacoco.*"})
 public class XxxServiceImplTest {
     // 测试代码
 }

@@ -29,7 +29,7 @@ python ~/.claude/skills/java-unittest/scripts/<script>.py [参数]
 
 ### 步骤 0：检测 JUnit 版本和 Mock 框架
 
-生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。使用 `~/.claude/skills/java-unittest/scripts/detect_framework.py` 脚本自动完成检测，结果自动缓存到 `.claude/test-framework-cache.json`（7 天有效期）。
+生成测试前必须检测项目使用的 JUnit 版本和静态 Mock 框架。使用 `~/.claude/skills/java-unittest/scripts/detect_framework.py` 脚本自动完成检测，结果自动缓存到 `.claude/test-framework-cache.json`，有缓存则使用缓存。
 
 **执行方式**：
 ```bash
