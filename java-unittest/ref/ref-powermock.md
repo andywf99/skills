@@ -59,7 +59,6 @@ public class XxxServiceImplTest {
 
 ```java
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
@@ -83,21 +82,7 @@ public class XxxServiceImplTest {
 |------|------|------|
 | `@RunWith(PowerMockRunner.class)` | 使用 PowerMock 运行器 | 是 |
 | `@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)` | 委托给 MockitoJUnitRunner，保持 Mockito 初始化行为 | 是（从 MockitoJUnitRunner 迁移时） |
-| `@PowerMockIgnore({...})` | 忽略指定包，避免类加载器冲突 | 是（使用 FastJSON 时） |
 | `@PrepareForTest({Xxx.class})` | 声明需要 Mock 的静态类 | 是（需要 Mock 静态方法时） |
-
-## FastJSON 兼容配置
-
-PowerMock 的类加载器与 FastJSON 的 ASM 序列化器冲突，会报错：
-```
-com.alibaba.fastjson.JSONException: create asm serializer error
-```
-
-**解决方案**：添加 `@PowerMockIgnore` 忽略 FastJSON 相关包：
-
-```java
-@PowerMockIgnore({"com.alibaba.fastjson.*", "javax.xml.*", "org.xml.*", "org.w3c.*"})
-```
 
 ## UnnecessaryStubbing 错误处理
 
@@ -120,7 +105,7 @@ Unnecessary Mockito stubbings
 4. 测试方法中使用 `PowerMockito.when(静态类.静态方法()).thenReturn(返回值)`
 5. 不需要 `@After` 关闭 Mock（PowerMock 自动管理）
 6. **禁止**使用 `MockedStatic`（Mockito 3.4+ 特性，与老版本不兼容）
-7. **从 MockitoJUnitRunner 迁移时**：必须使用 `@PowerMockRunnerDelegate` + `@PowerMockIgnore`
+7. **从 MockitoJUnitRunner 迁移时**：必须使用 `@PowerMockRunnerDelegate`
 
 ## 常见静态类示例
 
@@ -139,7 +124,6 @@ PowerMockito.when(GrayUtils.isGray()).thenReturn(true);
 
 | 错误 | 原因 | 解决方案 |
 |------|------|----------|
-| `JSONException: create asm serializer error` | PowerMock 类加载器与 FastJSON ASM 冲突 | 添加 `@PowerMockIgnore({"com.alibaba.fastjson.*", ...})` |
 | `Unnecessary Mockito stubbings` | Mockito 严格模式检测到未使用的 stub | 使用 `@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)` |
 | `ClassNotFoundException: PowerMockRunnerDelegate` | 包名错误 | 使用 `org.powermock.modules.junit4.PowerMockRunnerDelegate` |
 | `NullPointerException` in `@Before` | Mockito 未初始化 | 添加 `@PowerMockRunnerDelegate(MockitoJUnitRunner.class)` |
