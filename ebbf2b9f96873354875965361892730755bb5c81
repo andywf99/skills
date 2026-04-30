@@ -1,0 +1,23 @@
+java-unit-test/SKILL.md
+  89f49d8a8c0e9ad4 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "ebbf2b9f96873354875965361892730755bb5c81",
+  "prompts": {
+    "89f49d8a8c0e9ad4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7586c9b6-3bab-4258-9b55-8e5442b4b3a0",
+        "model": "glm-5.1"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 17,
+      "accepted_lines": 30,
+      "overriden_lines": 4
+    }
+  }
+}
