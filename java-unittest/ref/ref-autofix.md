@@ -50,6 +50,7 @@ Tests run: 5, Failures: 1, Errors: 2, Skipped: 0
 | `AssertionError` | 错误4：断言不匹配 |
 | `NullPointerException` | 错误5：Mock 未注入 |
 | `Surefire fork` 相关 | 错误7：Surefire fork 失败 |
+| `YlFilePullException` / 静态初始化连接外部服务 | 错误8：静态初始化块副作用 |
 
 #### 应用修复
 
@@ -64,9 +65,10 @@ Tests run: 5, Failures: 1, Errors: 2, Skipped: 0
 当一次运行出现多个错误时，建议按以下优先级逐个修复：
 
 1. **编译错误 / NoClassDefFoundError**：优先解决，否则后续测试无法运行。
-2. **NoSuchMethodError**：版本冲突会导致连锁错误，优先解决。
-3. **NullPointerException（Mock 未注入）**：修复后通常能一次性解决多个测试方法。
-4. **AssertionError**：最后处理，需要在 Mock 和业务逻辑都正确的前提下调整断言。
+2. **静态初始化块副作用（YlFilePullException 等）**：CI 环境必现，本地可能不报错，优先解决。
+3. **NoSuchMethodError**：版本冲突会导致连锁错误，优先解决。
+4. **NullPointerException（Mock 未注入）**：修复后通常能一次性解决多个测试方法。
+5. **AssertionError**：最后处理，需要在 Mock 和业务逻辑都正确的前提下调整断言。
 
 ### 步骤4：生成覆盖率报告
 
@@ -140,6 +142,59 @@ mvn clean test jacoco:report
 ### 错误7：Surefire fork 失败
 
 **修复**：在 pom.xml 的 `maven-surefire-plugin` 中设置 `<forkCount>0</forkCount>`。
+
+### 错误8：静态初始化块副作用（mockStatic 触发外部连接）
+
+**典型报错**：
+```
+YlFilePullException: YlFileUtil no reachable pullApi,please check network params:[unknown]
+    at com.jt.file.pull.PullApiUtil.loopRequest(PullApiUtil.java:77)
+    at com.jt.file.FileAutoConfiguration.appSlotRole(FileAutoConfiguration.java:370)
+    at com.jt.file.FileAutoConfiguration.init(FileAutoConfiguration.java:198)
+    at com.jt.file.YlFileUtil.reachInitFromStatic(YlFileUtil.java:1585)
+    at com.jt.file.YlFileUtil.<clinit>(YlFileUtil.java:36)
+```
+
+**原因**：`mockStatic(XxxUtil.class)` 或 `PowerMockito.mockStatic(XxxUtil.class)` 会加载目标类，触发其 `<clinit>` 静态初始化块。若初始化块中有网络请求、文件 IO、数据库连接等副作用，在 Jenkins 等无外网访问的 CI 环境中会抛异常。**本地开发环境可能因能连通外部服务而不报错，容易遗漏。**
+
+**修复（PowerMock 方案）**：添加 `@SuppressStaticInitializationFor` 注解跳过静态初始化：
+
+```java
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)
+@PrepareForTest({YlFileUtil.class, MD5Utils.class})
+@SuppressStaticInitializationFor("com.jt.file.YlFileUtil")   // 全限定类名
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
+public class XxxServiceImplTest {
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(YlFileUtil.class);  // 不再触发 <clinit>
+    }
+}
+```
+
+**修复（MockedStatic 方案）**：`mockStatic()` 本身不支持抑制静态初始化，需退回 PowerMock 方案：
+
+```java
+// 退回 PowerMock 处理有副作用的静态类
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)
+@PrepareForTest({YlFileUtil.class})
+@SuppressStaticInitializationFor("com.jt.file.YlFileUtil")
+public class XxxServiceImplTest {
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(YlFileUtil.class);
+    }
+}
+```
+
+**判断规则**：仅当静态类的 `<clinit>` 含有网络请求/文件 IO/数据库连接等副作用时才需添加 `@SuppressStaticInitializationFor`。纯工具类（如 `SessionUtil`、`GrayUtils`、`MD5Utils`）不需要。
+
+> **注意**：
+> 1. `@SuppressStaticInitializationFor` 的值是**全限定类名**字符串，不是 `.class` 引用
+> 2. 可以同时指定多个类：`@SuppressStaticInitializationFor({"com.jt.file.YlFileUtil", "com.xxx.ConfigHolder"})`
+> 3. 抑制后该类的 `static final` 常量字段为默认值（`null`/`0`/`false`），需通过 `when()` 设置 Mock 返回值
 
 ---
 
