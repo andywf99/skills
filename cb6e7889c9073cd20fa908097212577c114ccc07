@@ -1,0 +1,23 @@
+java-unittest/ref/ref-powermock.md
+  ee4c0a9c02c141d3 108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "cb6e7889c9073cd20fa908097212577c114ccc07",
+  "prompts": {
+    "ee4c0a9c02c141d3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6850726b-8ab4-4680-836f-c8793eb2b719",
+        "model": "astron-code-latest"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 17,
+      "accepted_lines": 412,
+      "overriden_lines": 5
+    }
+  }
+}
