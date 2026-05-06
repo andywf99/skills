@@ -244,6 +244,47 @@ private static MockedStatic<GrayUtils> mockedStatic = mockStatic(GrayUtils.class
 
 **解决**：在 `@Before`/`@BeforeEach` 中创建，`@After`/`@AfterEach` 中关闭。
 
+### 错误4：Mock 静态类时触发静态初始化块副作用
+
+`mockStatic(XxxUtil.class)` 会加载目标类，触发其 `<clinit>` 静态初始化块。如果初始化块中有网络请求、文件 IO、数据库连接等副作用，在 CI 环境中会抛异常。
+
+**典型报错**：`YlFilePullException: YlFileUtil no reachable pullApi` — `YlFileUtil.<clinit>` 调用了 `FileAutoConfiguration.init()` 连接文件服务。
+
+**解决**：
+
+**JUnit 5**：`mockStatic()` 本身不支持抑制静态初始化，需换用 PowerMock 的 `@SuppressStaticInitializationFor`（但这与 MockedStatic 冲突）。推荐做法是将对该类静态方法的调用抽取为实例方法，或使用 `@PowerMockRunnerDelegate` + PowerMock 方案：
+
+```java
+// 方案：退回 PowerMock 处理有副作用的静态类
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)
+@PrepareForTest({YlFileUtil.class})
+@SuppressStaticInitializationFor("com.jt.file.YlFileUtil")
+public class XxxServiceImplTest {
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(YlFileUtil.class);
+    }
+}
+```
+
+**JUnit 4**：直接使用 PowerMock 的 `@SuppressStaticInitializationFor`：
+
+```java
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)
+@PrepareForTest({YlFileUtil.class})
+@SuppressStaticInitializationFor("com.jt.file.YlFileUtil")
+public class XxxServiceImplTest {
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(YlFileUtil.class);
+    }
+}
+```
+
+> **判断规则**：仅当静态类的 `<clinit>` 含有网络请求/文件 IO/数据库连接等副作用时才需加 `@SuppressStaticInitializationFor`。纯工具类（如 `SessionUtil`、`GrayUtils`、`MD5Utils`）不需要。
+
 ---
 
 ## 与 PowerMock 的区别

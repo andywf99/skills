@@ -12,7 +12,6 @@
 import argparse
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -20,42 +19,13 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-def find_maven(project_root: Path) -> str | None:
-    """查找用户系统环境中的 Maven 可执行文件。
-
-    查找顺序：
-    1. 项目目录下的 mvnw / mvnw.cmd（Maven Wrapper）
-    2. shutil.which 在 PATH 中查找 mvn / mvn.cmd
-    3. MAVEN_HOME / M2_HOME 环境变量下的 bin 目录
-    """
+def find_maven() -> str | None:
+    """通过 PATH 查找 Maven 可执行文件。"""
     is_windows = sys.platform == "win32"
-
-    # 1. Maven Wrapper
-    if is_windows:
-        wrapper = project_root / "mvnw.cmd"
-    else:
-        wrapper = project_root / "mvnw"
-    if wrapper.exists():
-        return str(wrapper)
-
-    # 2. PATH 中查找
     for name in ("mvn.cmd", "mvn.bat", "mvn") if is_windows else ("mvn",):
         found = shutil.which(name)
         if found:
             return found
-
-    # 3. MAVEN_HOME / M2_HOME
-    for env_var in ("MAVEN_HOME", "M2_HOME"):
-        home = os.environ.get(env_var)
-        if home:
-            home_path = Path(home)
-            if is_windows:
-                candidate = home_path / "bin" / "mvn.cmd"
-            else:
-                candidate = home_path / "bin" / "mvn"
-            if candidate.exists():
-                return str(candidate)
-
     return None
 
 
@@ -205,8 +175,6 @@ def main():
     parser.add_argument("--threshold", type=float, default=90, help="覆盖率阈值（百分比，默认 90）")
     parser.add_argument("--no-run", action="store_true", help="不运行 jacoco:report，直接解析已有的 XML 报告")
     parser.add_argument("--xml-path", type=Path, default=None, help="JaCoCo XML 报告路径（默认自动查找）")
-    parser.add_argument("--mvn", type=str, default=None, help="Maven 可执行文件路径（默认自动检测）")
-
     args = parser.parse_args()
 
     if not args.project.is_dir():
@@ -215,7 +183,7 @@ def main():
 
     # 运行 JaCoCo 报告
     if not args.no_run:
-        mvn_cmd = args.mvn or find_maven(args.project)
+        mvn_cmd = find_maven()
         if not mvn_cmd:
             print("Maven 未找到，跳过报告生成，尝试直接查找已有报告...", file=sys.stderr)
         else:

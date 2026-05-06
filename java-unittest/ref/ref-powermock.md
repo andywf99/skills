@@ -59,7 +59,6 @@ public class XxxServiceImplTest {
 
 ```java
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
@@ -83,21 +82,7 @@ public class XxxServiceImplTest {
 |------|------|------|
 | `@RunWith(PowerMockRunner.class)` | 使用 PowerMock 运行器 | 是 |
 | `@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)` | 委托给 MockitoJUnitRunner，保持 Mockito 初始化行为 | 是（从 MockitoJUnitRunner 迁移时） |
-| `@PowerMockIgnore({...})` | 忽略指定包，避免类加载器冲突 | 是（使用 FastJSON 时） |
 | `@PrepareForTest({Xxx.class})` | 声明需要 Mock 的静态类 | 是（需要 Mock 静态方法时） |
-
-## FastJSON 兼容配置
-
-PowerMock 的类加载器与 FastJSON 的 ASM 序列化器冲突，会报错：
-```
-com.alibaba.fastjson.JSONException: create asm serializer error
-```
-
-**解决方案**：添加 `@PowerMockIgnore` 忽略 FastJSON 相关包：
-
-```java
-@PowerMockIgnore({"com.alibaba.fastjson.*", "javax.xml.*", "org.xml.*", "org.w3c.*"})
-```
 
 ## UnnecessaryStubbing 错误处理
 
@@ -120,7 +105,68 @@ Unnecessary Mockito stubbings
 4. 测试方法中使用 `PowerMockito.when(静态类.静态方法()).thenReturn(返回值)`
 5. 不需要 `@After` 关闭 Mock（PowerMock 自动管理）
 6. **禁止**使用 `MockedStatic`（Mockito 3.4+ 特性，与老版本不兼容）
-7. **从 MockitoJUnitRunner 迁移时**：必须使用 `@PowerMockRunnerDelegate` + `@PowerMockIgnore`
+7. **从 MockitoJUnitRunner 迁移时**：必须使用 `@PowerMockRunnerDelegate`
+8. **有副作用的静态类**：必须配合 `@SuppressStaticInitializationFor` 抑制静态初始化块
+
+## @SuppressStaticInitializationFor — 抑制静态初始化块
+
+### 问题场景
+
+`PowerMockito.mockStatic(XxxUtil.class)` 在创建 mock 对象时，会先加载目标类，触发其静态初始化块 `<clinit>`。如果该初始化块包含网络请求、文件 IO、数据库连接等副作用（如 `YlFileUtil` 会在 `<clinit>` 中调用 `FileAutoConfiguration.init()` 连接文件服务），在 Jenkins 等无外网访问的 CI 环境中会抛异常导致测试失败。**本地开发环境可能因能连通外部服务而不报错，容易遗漏。**
+
+典型报错：
+```
+YlFilePullException: YlFileUtil no reachable pullApi,please check network params:[unknown]
+    at com.jt.file.pull.PullApiUtil.loopRequest(PullApiUtil.java:77)
+    at com.jt.file.FileAutoConfiguration.appSlotRole(FileAutoConfiguration.java:370)
+    at com.jt.file.FileAutoConfiguration.init(FileAutoConfiguration.java:198)
+    at com.jt.file.YlFileUtil.reachInitFromStatic(YlFileUtil.java:1585)
+    at com.jt.file.YlFileUtil.<clinit>(YlFileUtil.java:36)
+```
+
+### 解决方案
+
+使用 `@SuppressStaticInitializationFor` 注解，让 PowerMock 跳过目标类的静态初始化代码，只创建空壳 mock 对象。
+
+### 用法
+
+```java
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)
+@PrepareForTest({YlFileUtil.class, MD5Utils.class})
+@SuppressStaticInitializationFor("com.jt.file.YlFileUtil")   // 全限定类名
+@PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
+public class XxxServiceImplTest {
+
+    @Before
+    public void setUp() {
+        // mockStatic 不再触发 YlFileUtil 的 <clinit>
+        PowerMockito.mockStatic(YlFileUtil.class);
+        PowerMockito.when(YlFileUtil.upload(any(), anyLong(), anyString(),
+                anyString(), anyString(), any(FileLifeEnum.class),
+                anyString(), anyString(), anyString())).thenReturn("http://mock-url/file.mp3");
+    }
+}
+```
+
+### 何时必须使用
+
+对以下类型的静态类使用 `mockStatic()` 时，**必须**配合 `@SuppressStaticInitializationFor`：
+
+| 静态类特征 | 示例 | 是否必须 |
+|-----------|------|---------|
+| `<clinit>` 中有网络请求 | `YlFileUtil`（连接文件服务） | **是** |
+| `<clinit>` 中有数据库连接 | 某些连接池工具类 | **是** |
+| `<clinit>` 中读取外部配置/文件 | 某些 Config 加载类 | **是** |
+| `<clinit>` 中仅初始化常量/缓存 | `GrayUtils`、`SessionUtil` | 否 |
+| 纯工具方法，无 `<clinit>` 副作用 | `MD5Utils`、`JsonUtils` | 否 |
+
+### 注意事项
+
+1. `@SuppressStaticInitializationFor` 的值是**全限定类名**字符串，不是 `.class` 引用
+2. 可以同时指定多个类：`@SuppressStaticInitializationFor({"com.jt.file.YlFileUtil", "com.xxx.ConfigHolder"})`
+3. 抑制后该类的 `static final` 常量字段为默认值（`null`/`0`/`false`），需要通过 `when()` 设置 Mock 返回值
+4. 只需对有副作用的类添加此注解，不要对不需要的类滥用
 
 ## 常见静态类示例
 
@@ -139,11 +185,11 @@ PowerMockito.when(GrayUtils.isGray()).thenReturn(true);
 
 | 错误 | 原因 | 解决方案 |
 |------|------|----------|
-| `JSONException: create asm serializer error` | PowerMock 类加载器与 FastJSON ASM 冲突 | 添加 `@PowerMockIgnore({"com.alibaba.fastjson.*", ...})` |
 | `Unnecessary Mockito stubbings` | Mockito 严格模式检测到未使用的 stub | 使用 `@PowerMockRunnerDelegate(MockitoJUnitRunner.Silent.class)` |
 | `ClassNotFoundException: PowerMockRunnerDelegate` | 包名错误 | 使用 `org.powermock.modules.junit4.PowerMockRunnerDelegate` |
 | `NullPointerException` in `@Before` | Mockito 未初始化 | 添加 `@PowerMockRunnerDelegate(MockitoJUnitRunner.class)` |
 | `NoClassDefFoundError: org/jacoco/agent/rt/internal_xxx/Offline` | JaCoCo offline 模式与 PowerMock 不兼容 | 见下方 JaCoCo 兼容配置 |
+| `YlFilePullException` / 静态初始化连接外部服务失败 | `mockStatic()` 触发目标类 `<clinit>`，执行了网络请求等副作用 | 使用 `@SuppressStaticInitializationFor` 抑制静态初始化 |
 
 ## JaCoCo 与 PowerMock 兼容配置
 

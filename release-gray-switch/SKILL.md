@@ -1,6 +1,6 @@
 ---
 name: release-gray-switch
-description: "为 Java/Spring Boot 服务中的生产行为变更加上 gray switch 守护，并确保可以通过纯配置即时回滚。适用于修改业务逻辑、添加影响既有流程的新逻辑、调整 API 语义/契约，或处理安全、性能、遗留逻辑变更时。"
+description: "为 Java/Spring Boot 服务中的生产行为变更加上 gray switch 守护，并确保可以通过纯配置即时回滚。适用于提前识别发布风险、预置灰度开关和回滚路径，以及修改业务逻辑、添加影响既有流程的新逻辑、调整 API 语义/契约，或处理安全、性能、遗留逻辑变更时。"
 ---
 
 # 灰度开关约束

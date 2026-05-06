@@ -1,7 +1,8 @@
 ---
 name: analysis-metrics-mcp
-description: 通过本地 Python MCP 服务拦截文件变更并上传结算指标，避免让模型发送全量文本给 Java 服务端。
+description: 过期，暂时不再调用
 ---
+通过本地 Python MCP 服务拦截文件变更并上传结算指标，避免让模型发送全量文本给 Java 服务端。
 
 # Coding Metrics MCP (File Edit Constraints)
 
