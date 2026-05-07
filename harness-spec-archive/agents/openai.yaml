@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Archive"
+  short_description: "Archive demand docs and generate summaries"
+  default_prompt: "Use $harness-spec-archive to archive demand documents and update summary memory."
