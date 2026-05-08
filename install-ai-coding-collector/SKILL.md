@@ -32,19 +32,29 @@ uname -s
 - 非 Windows（`Darwin` / `Linux`）：停止执行，提示「git-ai 仅支持 Windows 系统」
 - `ADMIN` 且 Windows：继续执行
 
+检查 Git 是否已安装：
+
+```bash
+git --version
+```
+
+- 成功输出版本号：继续执行
+- 报错：停止执行，提示「未检测到 Git，请先安装 Git 后重新执行安装」
+
 ## 第2步：检查是否已安装
 
 ```bash
 git-ai -v
 ```
 
-- 成功输出版本号：提示「git-ai 已安装，版本：X.X.X，跳过安装」，结束
-- 报错：继续执行
+- 输出版本号为 1.3.4：提示「git-ai 已安装，版本：X.X.X，跳过安装」，跳过第3步，继续执行第4步
+- 输出版本号但非 1.3.4：提示「git-ai 已安装，版本：X.X.X，当前版本非 1.3.4，将重新安装」，继续执行第3步
+- 报错：继续执行第3步
 
 ## 第3步：安装 git-ai
 
 ```bash
-powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://usegitai.com/install.ps1 | iex"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://github.com/git-ai-project/git-ai/releases/download/v1.3.4/install.ps1 | iex"
 ```
 
 权限错误时提示「请以管理员身份运行终端后重新执行安装」
@@ -81,7 +91,23 @@ git-ai -v
 - 输出版本号：提示「git-ai 安装成功，版本：X.X.X」
 - 报错：提示「安装后验证失败，请检查安装日志或手动重启终端后再试」
 
-## 第6步：配置 Claude Code Hook
+## 第6步：关闭自动更新
+
+读取 `~/.git-ai/config.json`，增加或替换以下配置项：
+
+```json
+{
+  "disable_auto_updates": true,
+  "update_channel": "none"
+}
+```
+
+- 文件已存在：读取内容，合并或替换 `disable_auto_updates` 和 `update_channel` 字段，保留其他配置，写回文件
+- 文件不存在：创建文件并写入上述配置
+
+提示「已关闭 git-ai 自动更新」
+
+## 第7步：配置 Claude Code Hook
 
 在 `~/.claude/settings.json` 中添加 Hook 配置：
 
@@ -109,7 +135,7 @@ git-ai -v
 
 提示「如使用 CC Switch，请将此 Hook 配置同时添加到 CC Switch 通用配置中」
 
-## 第7步：部署并启动 Hook Server
+## 第8步：部署并启动 Hook Server
 
 复制 Hook Server 文件到 Claude Code hooks 目录：
 
@@ -132,6 +158,15 @@ powershell -NoProfile -Command "Get-ScheduledTask -TaskName 'GitAiHookServer' | 
 - `TaskName` 存在且 `LastRunTime` 有值：提示「Hook Server 已注册且运行，安装流程全部完成」
 - 未找到：提示「计划任务未注册成功，请检查启动脚本执行是否有报错」
 - 状态异常：提示「计划任务状态异常，请尝试手动执行启动脚本或重启终端」
+
+## 第9步：配置 Git Notes 推送
+
+```bash
+git config --global --add remote.origin.push "refs/notes/*:refs/notes/*"
+```
+
+- 成功：提示「Git Notes 推送配置完成」
+- 报错：提示「Git Notes 推送配置失败，请手动执行：git config --global --add remote.origin.push "refs/notes/*:refs/notes/*"」
 
 ## 注意事项
 
