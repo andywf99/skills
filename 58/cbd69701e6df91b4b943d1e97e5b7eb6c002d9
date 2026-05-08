@@ -1,0 +1,29 @@
+install-ai-coding-collector/SKILL.md
+  s_f042ec8dd57c0a::t_38c4270bb1cdae 138
+  s_f042ec8dd57c0a::t_9169eb76a07885 162
+  s_f042ec8dd57c0a::t_692093809ef1a5 35-43
+  s_f042ec8dd57c0a::t_87a426a4c174ba 163-170
+  s_f042ec8dd57c0a::t_bbc515b8817534 50-52
+  s_f042ec8dd57c0a::t_e59e0859aba3a4 57
+  s_f042ec8dd57c0a::t_0af3d8714dc03f 94-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "58cbd69701e6df91b4b943d1e97e5b7eb6c002d9",
+  "prompts": {
+    "f042ec8dd57c0a74": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4483f10b-55c6-43b9-8e71-1f0a55aaf288",
+        "model": "astron-code-latest"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 43,
+      "total_deletions": 8,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
