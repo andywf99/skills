@@ -5,6 +5,10 @@ description: 将 PRD 转换为极兔概要设计文档的新版流程。先用 s
 
 # JT Spec V2
 
+## 工作目录
+
+当前会话的工作目录为 `{{WORKING_DIRECTORY}}`，后续所有文件路径、目录结构、脚本执行均基于此目录，不再使用相对路径或临时路径。
+
 ## 设计目标
 
 `doc-jt-spec-v2` 的主导流程是 **superpowers 式对话收口**，OpenSpec 只是承接和校验已确认结论的结构化产物。
@@ -79,7 +83,7 @@ description: 将 PRD 转换为极兔概要设计文档的新版流程。先用 s
 ## 目录结构
 
 ```text
-#12xxxxx 【业务需求】XXX/
+{{WORKING_DIRECTORY}}/
 ├── assets/
 ├── 需求文档.docx
 ├── 需求文档.md
@@ -98,18 +102,16 @@ description: 将 PRD 转换为极兔概要设计文档的新版流程。先用 s
 
 ## Step 0：PRD 转 Markdown
 
-当用户提供 `.docx` 或 `.doc`：
-
-1. 根据 PRD 文件名创建需求目录。
-2. 将原始 PRD 移入需求目录。
-3. 使用脚本转换 Markdown：
+1. 检查 `{{WORKING_DIRECTORY}}` 下是否存在 `需求文档.docx`（或 `.doc`）。
+2. 如果未找到，退出执行，用 `AskUserQuestion` 提示用户："当前工作目录下缺少 `需求文档.docx` 必要文件，请确认文件是否已放置到 `{{WORKING_DIRECTORY}}` 目录下。"
+3. 如果找到，使用脚本转换 Markdown：
 
 ```bash
-scripts/word2md.bat "需求目录/需求文档.docx" "需求目录/需求文档.md"
+scripts/word2md.bat "{{WORKING_DIRECTORY}}/需求文档.docx" "{{WORKING_DIRECTORY}}/需求文档.md"
 ```
 
 4. 检查图片、表格、列表是否基本可读。
-5. 后续优先读取 `需求文档.md`。
+5. 后续优先读取 `{{WORKING_DIRECTORY}}/需求文档.md`。
 
 不要在 Step 0 创建 OpenSpec change。
 
@@ -119,9 +121,9 @@ scripts/word2md.bat "需求目录/需求文档.docx" "需求目录/需求文档.
 
 必须生成：
 
-- `stage/review.md`：Review 阶段完整评审快照。
-- `stage/research.md`：Research 阶段完整代码证据和影响面。
-- `stage/plan.md`：Planning 阶段完整方案、SQL、任务拆解。
+- `{{WORKING_DIRECTORY}}/stage/review.md`：Review 阶段完整评审快照。
+- `{{WORKING_DIRECTORY}}/stage/research.md`：Research 阶段完整代码证据和影响面。
+- `{{WORKING_DIRECTORY}}/stage/plan.md`：Planning 阶段完整方案、SQL、任务拆解。
 
 阶段文件规则：
 
@@ -154,7 +156,7 @@ scripts/word2md.bat "需求目录/需求文档.docx" "需求目录/需求文档.
 
 1. 读取 PRD Markdown。
 2. 快速查看项目结构、README/CLAUDE、核心 Controller/Service/Entity/DTO/VO/Mapper。
-3. 写入或更新 `stage/review.md`，完整记录：
+3. 写入或更新 `{{WORKING_DIRECTORY}}/stage/review.md`，完整记录：
    - 业务目标。
    - 需求范围。
    - 明确规则。
@@ -162,9 +164,9 @@ scripts/word2md.bat "需求目录/需求文档.docx" "需求目录/需求文档.
    - 数据、接口、权限、性能、安全、灰度、回刷风险。
    - 阻塞问题清单。
    - 已收口问题清单。
-4. 在聊天中只输出 Review 简短摘要、`stage/review.md` 路径、当前要确认的一个阻塞问题。
+4. 在聊天中只输出 Review 简短摘要、`{{WORKING_DIRECTORY}}/stage/review.md` 路径、当前要确认的一个阻塞问题。
 5. 对阻塞问题逐项 `AskUserQuestion`。
-6. 每个回答后更新 Review 结论并回写 `stage/review.md`。
+6. 每个回答后更新 Review 结论并回写 `{{WORKING_DIRECTORY}}/stage/review.md`。
 7. 当且仅当所有阻塞问题收口后，才能发起 Review 阶段通过确认。
 
 Review 阶段禁止：
@@ -192,7 +194,7 @@ Review 通过确认问题也必须用 `AskUserQuestion`。
 - 权限和数据范围过滤。
 - 灰度开关和现有回滚方式。
 
-`stage/research.md` 必须完整记录：
+`{{WORKING_DIRECTORY}}/stage/research.md` 必须完整记录：
 
 - 功能点拆解。
 - 影响接口和间接链路。
@@ -203,12 +205,12 @@ Review 通过确认问题也必须用 `AskUserQuestion`。
 - 已收口问题清单。
 - 非阻塞待确认草稿及非阻塞原因。
 
-聊天中只输出 Research 简短摘要、`stage/research.md` 路径、当前要确认的一个阻塞问题。
+聊天中只输出 Research 简短摘要、`{{WORKING_DIRECTORY}}/stage/research.md` 路径、当前要确认的一个阻塞问题。
 
 Research 阶段门禁：
 
 1. 阻塞待确认逐项 `AskUserQuestion`。
-2. 用户回答后更新 Research 结论并回写 `stage/research.md`。
+2. 用户回答后更新 Research 结论并回写 `{{WORKING_DIRECTORY}}/stage/research.md`。
 3. 不能用“后续待确认”跳过接口契约、字段落点、枚举、SQL、灰度、权限、安全等问题。
 4. 所有阻塞问题收口后，输出“已收口问题清单”。
 5. 如仍有非阻塞待确认，逐项说明为什么非阻塞。
@@ -223,7 +225,7 @@ Research 通过前禁止：
 
 目标：确认技术方案、SQL、接口、灰度、回滚、任务拆解。
 
-`stage/plan.md` 必须完整记录：
+`{{WORKING_DIRECTORY}}/stage/plan.md` 必须完整记录：
 
 - 推荐方案。
 - 1-2 个备选方案。
@@ -241,7 +243,7 @@ Research 通过前禁止：
 - 阻塞待确认清单。
 - 已收口问题清单。
 
-聊天中只输出 Planning 简短摘要、`stage/plan.md` 路径、当前要确认的一个阻塞问题。
+聊天中只输出 Planning 简短摘要、`{{WORKING_DIRECTORY}}/stage/plan.md` 路径、当前要确认的一个阻塞问题。
 
 Planning 阶段必须逐项确认：
 
@@ -256,7 +258,7 @@ Planning 阶段必须逐项确认：
 - 权限和安全口径。
 - 测试验收标准。
 
-Planning 通过前必须输出并回写 `stage/plan.md`：
+Planning 通过前必须输出并回写 `{{WORKING_DIRECTORY}}/stage/plan.md`：
 
 - 已收口问题清单。
 - 剩余非阻塞待确认清单及非阻塞原因。
