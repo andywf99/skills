@@ -1,0 +1,23 @@
+gray-switch-clean-plus/agents/openai.yaml
+  671ad18581ddd2c6 1,3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "2c400916c521281f5e023464c0c5dd43c17cf96c",
+  "prompts": {
+    "671ad18581ddd2c6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019e0abc-ca8e-77a0-80ee-c17aa357f79c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "bruce.hong",
+      "messages": [],
+      "total_additions": 275,
+      "total_deletions": 2,
+      "accepted_lines": 271,
+      "overriden_lines": 2
+    }
+  }
+}
