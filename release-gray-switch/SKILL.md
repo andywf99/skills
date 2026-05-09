@@ -54,6 +54,61 @@ description: "为 Java/Spring Boot 服务中的生产行为变更加上 gray swi
 - 新逻辑必须受 gray switch 保护。
 - gray 关闭时，旧逻辑必须仍然可执行。
 - 回滚必须是纯配置、且立即生效。
+- **禁止在灰度 if 开关中混用 `&&` 或业务逻辑**。灰度判断必须独立，不得与业务条件组合。
+
+### 灰度开关条件规范（强制）
+
+灰度开关的 `if` 条件必须保持纯粹，只包含 `GrayUtils.isGray()` 或其否定形式，禁止与业务逻辑混用。
+
+**错误示例（禁止）：**
+
+```java
+// ❌ 禁止：灰度开关与业务条件用 && 组合
+if (GrayUtils.isGray(...) && StringUtils.isNotEmpty(code)) {
+    // 新逻辑
+}
+
+// ❌ 禁止：灰度开关与业务条件用 || 组合
+if (!GrayUtils.isGray(...) || dataList.size() > 10) {
+    // 旧逻辑
+}
+
+// ❌ 禁止：灰度开关嵌套在业务条件中
+if (status == Status.ACTIVE && GrayUtils.isGray(...)) {
+    // 新逻辑
+}
+```
+
+**正确示例：**
+
+```java
+// ✅ 正确：灰度判断独立，业务逻辑在内层
+if (GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-a", "描述"))) {
+    if (StringUtils.isNotEmpty(code)) {
+        // 新逻辑
+    }
+}
+
+// ✅ 正确：否定形式独立使用
+if (!GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-b", "描述"))) {
+    // 旧逻辑
+} else {
+    // 新逻辑
+}
+
+// ✅ 正确：灰度判断后用 else 分支处理业务
+if (GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-c", "描述"))) {
+    // 新逻辑（可包含任意业务条件判断）
+} else {
+    // 旧逻辑
+}
+```
+
+**原因：**
+1. 灰度开关的职责是控制新旧逻辑切换，不应承担业务判断职责。
+2. 混用会导致灰度关闭时无法完整回退到旧逻辑。
+3. 独立的灰度判断便于快速定位和排查问题。
+4. 配置回滚时逻辑清晰，不会产生意外的业务分支。
 
 ### 例外：简单新增逻辑（不需要创建新方法/类）
 
@@ -79,11 +134,14 @@ if (GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-a", "sampl
 ```
 
 ```java
-if (!GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-b", "sample gray switch B"))
-        && !codeSet.contains(dataList.get(0).getCode())) {
+if (!GrayUtils.isGray(GraySwitch.of("gray-switch.module.sample.feature-b", "sample gray switch B"))) {
     // 旧逻辑
     processOld(dataList);
     return;
+}
+// 新逻辑在灰度开启时执行
+if (!codeSet.contains(dataList.get(0).getCode())) {
+    processNew(dataList);
 }
 ```
 
@@ -222,6 +280,7 @@ if (GrayUtils.isGray(
 - 旧逻辑已保留且已废弃标记
 - 新逻辑已受 gray switch 保护
 - 回滚是纯配置且立即生效
+- **灰度 if 条件未与业务逻辑混用 `&&` 或 `||`**
 
 如果任一项不满足，拒绝生成代码。
 
