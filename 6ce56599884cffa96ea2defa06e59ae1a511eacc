@@ -1,0 +1,25 @@
+java-unittest/SKILL.md
+  ee4c0a9c02c141d3 18-27,32,36,66,72,82,88,96,102,111,116,123,129,138,143,152,162,167,170,273,282,286,290
+README.md
+  ee4c0a9c02c141d3 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "6ce56599884cffa96ea2defa06e59ae1a511eacc",
+  "prompts": {
+    "ee4c0a9c02c141d3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6850726b-8ab4-4680-836f-c8793eb2b719",
+        "model": "astron-code-latest"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 33,
+      "total_deletions": 22,
+      "accepted_lines": 583,
+      "overriden_lines": 0
+    }
+  }
+}

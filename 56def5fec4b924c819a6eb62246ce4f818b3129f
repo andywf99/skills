@@ -1,0 +1,37 @@
+java-unittest/scripts/detect_framework.py
+  ee4c0a9c02c141d3 1-182
+java-unittest/scripts/parse_test_result.py
+  ee4c0a9c02c141d3 1-246
+java-unittest/scripts/parse_coverage.py
+  ee4c0a9c02c141d3 1-280
+java-unittest/scripts/collect_changes.py
+  ee4c0a9c02c141d3 1-277
+doc-jt-spec/SKILL.md
+  ee4c0a9c02c141d3 1-241
+java-unittest/scripts/scan_dependencies.py
+  ee4c0a9c02c141d3 1-195
+java-unittest/SKILL.md
+  ee4c0a9c02c141d3 4,18,22,24-27,29-34,36,38-44,46,54-65,67-80,84-107,111-121,123-134,139-147,150-160,259-278,280
+doc-jt-spec/README.md
+  ee4c0a9c02c141d3 1-242
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "56def5fec4b924c819a6eb62246ce4f818b3129f",
+  "prompts": {
+    "ee4c0a9c02c141d3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6850726b-8ab4-4680-836f-c8793eb2b719",
+        "model": "astron-code-latest"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 1803,
+      "total_deletions": 60,
+      "accepted_lines": 1994,
+      "overriden_lines": 0
+    }
+  }
+}
