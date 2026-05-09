@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clean Gray Switch"
+  short_description: "Clean gray code with Apollo and git safeguards"
+  default_prompt: "Use $gray-switch-clean to scan and clean gray switch code, skipping keys present in production Apollo gray-switch namespace or changed within the last month."
