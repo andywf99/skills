@@ -89,6 +89,11 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
    ```
    脚本自动运行 `mvn test jacoco:report`，解析 XML 报告，输出未覆盖的方法和行号。针对性补充测试用例，循环直到达标。
 
+7. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
+   ```bash
+   rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
+   ```
+
 ### commit 模式（用户传入 `commit {commitId}`）
 
 1. **采集变更**：
@@ -114,6 +119,11 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
 6. **覆盖率检查**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
+
+7. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
+   ```bash
+   rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
    ```
 
 ### 本地模式（用户传入 `local` 参数）
@@ -143,6 +153,11 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
    python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
 
+7. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
+   ```bash
+   rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
+   ```
+
 ### 全量模式（用户指定了类名或方法名）
 
 1. **定位目标文件**：用 `Glob` 在 `src/main/java` 下搜索用户指定的类名（如 `Glob src/main/java/**/XxxService.java`）。
@@ -165,6 +180,11 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
 6. **覆盖率检查**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
+   ```
+
+7. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
+   ```bash
+   rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
    ```
 
 信息获取优先使用 `~/.claude/skills/java-unittest/scripts/` 下的脚本，脚本无法覆盖的场景再用 Glob/Grep/Read 获取信息。
@@ -302,6 +322,26 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
 
 ---
 
+## 9. 临时文件清理
+
+流程中脚本会产生以下临时文件，**所有模式结束后必须清理**，避免污染 Git 工作区：
+
+| 临时文件 | 产生环节 | 说明 |
+|---|---|---|
+| `{projectRoot}/.claude/test-framework-cache.json` | 步骤 0 框架检测 | 框架检测结果缓存，下次运行时可重新生成 |
+| `{projectRoot}/coverage_report.json` | 步骤 6 覆盖率检查 | 覆盖率解析中间产物 |
+
+清理命令：
+```bash
+rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
+```
+
+若项目 `.gitignore` 未包含上述文件，建议追加：
+```
+.claude/test-framework-cache.json
+coverage_report.json
+```
+
 ## 自检清单
 
 **结构与命名**：
@@ -330,6 +370,8 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
 - [ ] 测试可运行且通过
 - [ ] 覆盖率达标（行 ≥ 90%、分支 ≥ 90%）
 - [ ] 已提供运行命令和报告路径
+**临时文件清理**：
+- [ ] 已删除 `.claude/test-framework-cache.json` 和 `coverage_report.json`
 
 
 ## 效率优化原则                                                                
