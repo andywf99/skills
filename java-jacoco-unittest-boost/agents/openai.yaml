@@ -1,0 +1,4 @@
+﻿interface:
+  display_name: "Java JaCoCo 单测补充"
+  short_description: "按 JaCoCo 配置逐类补充 Java 单测"
+  default_prompt: "使用 $java-jacoco-unittest-boost 为当前 Maven Java 项目按 JaCoCo 配置逐类补充单元测试，并校验单类覆盖率达到 90%。"
