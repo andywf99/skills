@@ -1,21 +1,36 @@
 ---
 name: install-claude-notify-hooks
-description: 安装 Claude Code 飞书通知 Hook，在 Claude 执行完毕或需要确认时自动推送飞书交互式卡片消息，包含项目、会话ID、权限模式等信息。适用于需要飞书通知的场景。
+description: 安装 Claude Code Lark 通知 Hook，在 Claude 执行完毕、需要确认或运行异常时自动推送 Lark 交互式卡片消息，包含项目、会话ID、权限模式、消息内容等信息。适用于需要 Lark 通知的场景。
 triggers:
-  - 安装飞书通知
-  - 配置飞书通知
-  - Claude通知飞书
+  - 安装 Lark 通知
+  - 配置 Lark 通知
+  - Claude通知Lark
   - 安装notify hooks
   - 配置Claude通知
 ---
 
-# 安装 Claude Code 飞书通知 Hook
+# 安装 Claude Code Lark 通知 Hook
 
 ## 适用场景
 
-- 需要 Claude Code 执行完毕后推送飞书通知
-- 需要 Claude Code 等待确认时推送飞书通知
-- 新机器初始化开发环境时配置飞书通知
+- 需要 Claude Code 执行完毕后推送 Lark 通知
+- 需要 Claude Code 等待确认时推送 Lark 通知
+- 需要 Claude Code 运行异常（API 错误）时推送 Lark 通知
+- 新机器初始化开发环境时配置 Lark 通知
+
+## 支持的通知场景
+
+| 事件 | 主题色 | 说明 |
+| :--- | :--- | :--- |
+| `Stop` | 蓝色 | Claude 执行完毕，展示执行结果摘要 |
+| `SubagentStop` | 蓝色 | 子任务执行完毕 |
+| `StopFailure` | 红色 | API 调用失败（限流、认证、计费等），展示错误详情 |
+| `Notification` → `permission_prompt` | 橙色 | 需要授权批准，展示权限消息 |
+| `Notification` → `idle_prompt` | 橙色 | Claude 空闲等待响应，展示等待消息 |
+| `Notification` → `elicitation_dialog` | 橙色 | 需要用户输入，展示问题内容 |
+| `Notification` → `elicitation_complete` | 绿色 | 交互完成，展示交互消息 |
+| `Notification` → `elicitation_response` | 青色 | 收到用户交互响应，展示响应内容 |
+| `Notification` → `auth_success` | 绿色 | 认证成功 |
 
 ## 第1步：检测系统环境
 
@@ -33,22 +48,22 @@ uname -s
 
 提示用户当前检测到的系统环境，后续步骤将根据 `OS_TYPE` 执行不同操作。
 
-## 第2步：获取飞书 Webhook URL
+## 第2步：获取 Lark Webhook URL
 
-使用 AskUserQuestion 向用户询问飞书自定义机器人的 Webhook URL：
+使用 AskUserQuestion 向用户询问 Lark 自定义机器人的 Webhook URL：
 
-- 问题：「请输入飞书自定义机器人的 Webhook URL」
-- 提示用户在飞书群中添加「自定义机器人」获取，格式为 `https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx`
+- 问题：「请输入 Lark 自定义机器人的 Webhook URL」
+- 提示用户在 Lark 群中添加「自定义机器人」获取，格式为 `https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx`
 
-将用户输入的 URL 保存为变量 `FEISHU_WEBHOOK_URL`。
+将用户输入的 URL 保存为变量 `LARK_WEBHOOK_URL`。
 
 如果用户未提供有效 URL（不以 `https://open.feishu.cn` 开头），停止执行，提示「Webhook URL 格式不正确，请确认后重新执行」。
 
 ## 第3步：检查是否已配置
 
-读取 `~/.claude/settings.json`，检查 `hooks.Stop` 和 `hooks.Notification` 中是否已包含 `feishu-notify`：
+读取 `~/.claude/settings.json`，检查 `hooks.Stop`、`hooks.StopFailure` 和 `hooks.Notification` 中是否已包含 `lark-notify`：
 
-- 两个 hook 都已存在：提示「飞书通知 Hook 已配置，如需更新请先手动删除旧配置后重新执行」，停止执行
+- 三个 hook 都已存在：提示「Lark 通知 Hook 已配置，如需更新请先手动删除旧配置后重新执行」，停止执行
 - 部分存在：提示「检测到部分 Hook 已配置，将补全缺失的 Hook」，继续执行
 - 都不存在：继续执行
 
@@ -60,10 +75,10 @@ uname -s
 mkdir -p ~/.claude/scripts
 ```
 
-将 `{{SKILL_DIR}}/scripts/feishu-notify.sh` 复制到 `~/.claude/scripts/feishu-notify.sh`，并替换其中的 `__FEISHU_WEBHOOK_URL__` 为用户提供的 Webhook URL：
+将 `{{SKILL_DIR}}/scripts/lark-notify.sh` 和 `{{SKILL_DIR}}/scripts/lark-notify.py` 复制到 `~/.claude/scripts/`，并替换 shell 脚本中的 `__LARK_WEBHOOK_URL__` 为用户提供的 Webhook URL：
 
 ```bash
-cp "{{SKILL_DIR}}/scripts/feishu-notify.sh" ~/.claude/scripts/feishu-notify.sh && sed -i "s|__FEISHU_WEBHOOK_URL__|${FEISHU_WEBHOOK_URL}|g" ~/.claude/scripts/feishu-notify.sh
+cp "{{SKILL_DIR}}/scripts/lark-notify.sh" ~/.claude/scripts/lark-notify.sh && cp "{{SKILL_DIR}}/scripts/lark-notify.py" ~/.claude/scripts/lark-notify.py && sed -i "s|__LARK_WEBHOOK_URL__|${LARK_WEBHOOK_URL}|g" ~/.claude/scripts/lark-notify.sh
 ```
 
 ### Linux / macOS 环境（OS_TYPE=linux 或 OS_TYPE=macos）
@@ -71,13 +86,13 @@ cp "{{SKILL_DIR}}/scripts/feishu-notify.sh" ~/.claude/scripts/feishu-notify.sh &
 额外赋予执行权限：
 
 ```bash
-chmod +x ~/.claude/scripts/feishu-notify.sh
+chmod +x ~/.claude/scripts/lark-notify.sh
 ```
 
 ### 验证脚本内容
 
 ```bash
-cat ~/.claude/scripts/feishu-notify.sh
+cat ~/.claude/scripts/lark-notify.sh
 ```
 
 - 包含正确的 Webhook URL：继续执行
@@ -85,7 +100,7 @@ cat ~/.claude/scripts/feishu-notify.sh
 
 ## 第5步：配置 Hooks
 
-读取 `~/.claude/settings.json`，在 `hooks` 中添加 `Stop` 和 `Notification` 配置。
+读取 `~/.claude/settings.json`，在 `hooks` 中添加 `Stop`、`StopFailure` 和 `Notification` 配置。
 
 所有系统统一使用 Bash 脚本，Claude Code 会通过 stdin 传递会话 JSON 数据给 hook 脚本。
 
@@ -100,7 +115,18 @@ cat ~/.claude/scripts/feishu-notify.sh
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/feishu-notify.sh Stop"
+            "command": "bash ~/.claude/scripts/lark-notify.sh Stop"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/lark-notify.sh StopFailure"
           }
         ]
       }
@@ -111,7 +137,7 @@ cat ~/.claude/scripts/feishu-notify.sh
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/feishu-notify.sh Notification"
+            "command": "bash ~/.claude/scripts/lark-notify.sh Notification"
           }
         ]
       }
@@ -123,9 +149,10 @@ cat ~/.claude/scripts/feishu-notify.sh
 **合并规则：**
 - 保留 settings.json 中已有的所有配置
 - 如果 `hooks` 键不存在，创建并添加
-- 如果 `hooks.Stop` 已存在但不含 `feishu-notify`，追加到数组末尾
-- 如果 `hooks.Notification` 已存在但不含 `feishu-notify`，追加到数组末尾
-- 如果 `hooks.Stop` 或 `hooks.Notification` 已包含 `feishu-notify`，跳过该项（第3步已处理）
+- 如果 `hooks.Stop` 已存在但不含 `lark-notify`，追加到数组末尾
+- 如果 `hooks.StopFailure` 已存在但不含 `lark-notify`，追加到数组末尾
+- 如果 `hooks.Notification` 已存在但不含 `lark-notify`，追加到数组末尾
+- 如果 `hooks.Stop`、`hooks.StopFailure` 或 `hooks.Notification` 已包含 `lark-notify`，跳过该项（第3步已处理）
 
 写回 `~/.claude/settings.json`。
 
@@ -134,20 +161,22 @@ cat ~/.claude/scripts/feishu-notify.sh
 ## 第6步：验证
 
 ```bash
-echo '{"session_id":"test1234","cwd":"/home/user/my-project","permission_mode":"plan","hook_event_name":"Stop","reason":"completed"}' | bash ~/.claude/scripts/feishu-notify.sh Stop
+echo '{"session_id":"test1234","cwd":"/home/user/my-project","permission_mode":"plan","hook_event_name":"Stop","last_assistant_message":"测试消息：执行完毕"}' | bash ~/.claude/scripts/lark-notify.sh Stop
 ```
 
-- 命令执行成功（退出码 0）：提示「飞书通知配置完成！请检查飞书群是否收到测试卡片消息」
+- 命令执行成功（退出码 0）：提示「Lark 通知配置完成！请检查 Lark 群是否收到测试卡片消息」
 - 命令执行失败：提示「测试通知发送失败，请检查 Webhook URL 是否正确，或网络是否可达」
 
 ## 注意事项
 
-1. 飞书 Webhook URL 需要在飞书群中添加「自定义机器人」获取
-2. 如需飞书签名验证，需手动编辑通知脚本添加签名逻辑
+1. Lark Webhook URL 需要在 Lark 群中添加「自定义机器人」获取
+2. 如需 Lark 签名验证，需手动编辑通知脚本添加签名逻辑
 3. 所有系统统一使用 Bash 脚本（.sh），Windows 通过 Git Bash 执行
-4. 脚本内部通过 Python（`py -3`）构建 JSON 和发送 HTTP 请求，确保 UTF-8 编码正确，无需 jq 依赖
-5. Hook 脚本通过 stdin 接收 Claude Code 传递的会话 JSON，包含 `session_id`、`cwd`、`permission_mode`、`hook_event_name`、`reason` 等字段
-6. 卡片消息包含项目名称、会话ID、权限模式、事件类型、工作目录等信息
-7. 卡片消息默认 @所有人（使用 `<at id=all></at>`），避免漏消息
-8. Stop 事件卡片主题为蓝色，Notification 事件卡片主题为橙色
-9. 如需卸载，手动删除 `~/.claude/scripts/feishu-notify.sh` 并从 `~/.claude/settings.json` 中移除对应 hook 配置
+4. Shell 脚本负责接收 stdin 并设置环境变量，Python 脚本负责构建卡片和发送 HTTP 请求，确保 UTF-8 编码正确
+5. Hook 脚本通过 stdin 接收 Claude Code 传递的会话 JSON，包含 `session_id`、`cwd`、`permission_mode`、`hook_event_name`、`message`、`last_assistant_message`、`error` 等字段
+6. Stop 事件会展示 `last_assistant_message`（Claude 最终回复摘要）；StopFailure 事件会展示 `error` 和 `error_details`
+7. Notification 事件会根据 `notification_type` 展示对应的 `message` 内容
+8. 消息内容超过 500 字符会自动截断，避免卡片过长
+9. 卡片消息默认 @所有人（使用 `<at id=all></at>`），避免漏消息
+10. Stop 事件卡片主题为蓝色，StopFailure 事件为红色，Notification 事件根据类型为橙色/绿色/青色
+11. 如需卸载，手动删除 `~/.claude/scripts/lark-notify.sh` 和 `~/.claude/scripts/lark-notify.py`，并从 `~/.claude/settings.json` 中移除对应 hook 配置
