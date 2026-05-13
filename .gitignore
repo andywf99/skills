@@ -38,6 +38,10 @@ build/
 ### Code X ###
 .system/
 
+### Python ###
+__pycache__/
+*.pyc
+
 ### personal skill ###
 /pdf
 /doc

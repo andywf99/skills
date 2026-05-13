@@ -75,24 +75,16 @@ uname -s
 mkdir -p ~/.claude/scripts
 ```
 
-将 `{{SKILL_DIR}}/scripts/lark-notify.sh` 和 `{{SKILL_DIR}}/scripts/lark-notify.py` 复制到 `~/.claude/scripts/`，并替换 shell 脚本中的 `__LARK_WEBHOOK_URL__` 为用户提供的 Webhook URL：
+将 `{{SKILL_DIR}}/scripts/lark-notify.py` 复制到 `~/.claude/scripts/lark-notify.py`，并替换其中的 `__LARK_WEBHOOK_URL__` 为用户提供的 Webhook URL：
 
 ```bash
-cp "{{SKILL_DIR}}/scripts/lark-notify.sh" ~/.claude/scripts/lark-notify.sh && cp "{{SKILL_DIR}}/scripts/lark-notify.py" ~/.claude/scripts/lark-notify.py && sed -i "s|__LARK_WEBHOOK_URL__|${LARK_WEBHOOK_URL}|g" ~/.claude/scripts/lark-notify.sh
-```
-
-### Linux / macOS 环境（OS_TYPE=linux 或 OS_TYPE=macos）
-
-额外赋予执行权限：
-
-```bash
-chmod +x ~/.claude/scripts/lark-notify.sh
+cp "{{SKILL_DIR}}/scripts/lark-notify.py" ~/.claude/scripts/lark-notify.py && sed -i "s|__LARK_WEBHOOK_URL__|${LARK_WEBHOOK_URL}|g" ~/.claude/scripts/lark-notify.py
 ```
 
 ### 验证脚本内容
 
 ```bash
-cat ~/.claude/scripts/lark-notify.sh
+cat ~/.claude/scripts/lark-notify.py
 ```
 
 - 包含正确的 Webhook URL：继续执行
@@ -102,7 +94,7 @@ cat ~/.claude/scripts/lark-notify.sh
 
 读取 `~/.claude/settings.json`，在 `hooks` 中添加 `Stop`、`StopFailure` 和 `Notification` 配置。
 
-所有系统统一使用 Bash 脚本，Claude Code 会通过 stdin 传递会话 JSON 数据给 hook 脚本。
+Hook 命令通过 `py -3` 直接调用 Python 脚本，Claude Code 会通过 stdin 传递会话 JSON 数据。
 
 需要添加的配置：
 
@@ -115,7 +107,7 @@ cat ~/.claude/scripts/lark-notify.sh
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/lark-notify.sh Stop"
+            "command": "py -3 ~/.claude/scripts/lark-notify.py Stop"
           }
         ]
       }
@@ -126,7 +118,7 @@ cat ~/.claude/scripts/lark-notify.sh
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/lark-notify.sh StopFailure"
+            "command": "py -3 ~/.claude/scripts/lark-notify.py StopFailure"
           }
         ]
       }
@@ -137,7 +129,7 @@ cat ~/.claude/scripts/lark-notify.sh
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/scripts/lark-notify.sh Notification"
+            "command": "py -3 ~/.claude/scripts/lark-notify.py Notification"
           }
         ]
       }
@@ -161,7 +153,7 @@ cat ~/.claude/scripts/lark-notify.sh
 ## 第6步：验证
 
 ```bash
-echo '{"session_id":"test1234","cwd":"/home/user/my-project","permission_mode":"plan","hook_event_name":"Stop","last_assistant_message":"测试消息：执行完毕"}' | bash ~/.claude/scripts/lark-notify.sh Stop
+echo '{"session_id":"test1234","cwd":"/home/user/my-project","permission_mode":"plan","hook_event_name":"Stop","last_assistant_message":"测试消息：执行完毕"}' | py -3 ~/.claude/scripts/lark-notify.py Stop
 ```
 
 - 命令执行成功（退出码 0）：提示「Lark 通知配置完成！请检查 Lark 群是否收到测试卡片消息」
@@ -171,12 +163,12 @@ echo '{"session_id":"test1234","cwd":"/home/user/my-project","permission_mode":"
 
 1. Lark Webhook URL 需要在 Lark 群中添加「自定义机器人」获取
 2. 如需 Lark 签名验证，需手动编辑通知脚本添加签名逻辑
-3. 所有系统统一使用 Bash 脚本（.sh），Windows 通过 Git Bash 执行
-4. Shell 脚本负责接收 stdin 并设置环境变量，Python 脚本负责构建卡片和发送 HTTP 请求，确保 UTF-8 编码正确
-5. Hook 脚本通过 stdin 接收 Claude Code 传递的会话 JSON，包含 `session_id`、`cwd`、`permission_mode`、`hook_event_name`、`message`、`last_assistant_message`、`error` 等字段
+3. 所有系统统一使用 Python 脚本（.py），通过 `py -3` 调用，无 Bash 依赖
+4. 脚本通过 stdin 接收 Claude Code 传递的会话 JSON，通过 `sys.argv[1]` 接收事件类型
+5. 会话 JSON 包含 `session_id`、`cwd`、`permission_mode`、`hook_event_name`、`message`、`last_assistant_message`、`error` 等字段
 6. Stop 事件会展示 `last_assistant_message`（Claude 最终回复摘要）；StopFailure 事件会展示 `error` 和 `error_details`
 7. Notification 事件会根据 `notification_type` 展示对应的 `message` 内容
 8. 消息内容超过 500 字符会自动截断，避免卡片过长
 9. 卡片消息默认 @所有人（使用 `<at id=all></at>`），避免漏消息
 10. Stop 事件卡片主题为蓝色，StopFailure 事件为红色，Notification 事件根据类型为橙色/绿色/青色
-11. 如需卸载，手动删除 `~/.claude/scripts/lark-notify.sh` 和 `~/.claude/scripts/lark-notify.py`，并从 `~/.claude/settings.json` 中移除对应 hook 配置
+11. 如需卸载，手动删除 `~/.claude/scripts/lark-notify.py`，并从 `~/.claude/settings.json` 中移除对应 hook 配置
