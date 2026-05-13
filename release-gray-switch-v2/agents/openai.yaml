@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enforce Gray Switch V2"
+  short_description: "Guard behavior changes with gray switch (local diff mode)"
+  default_prompt: "Use $enforce-gray-switch-v2 to detect local code changes and wrap them with gray switch guards."
