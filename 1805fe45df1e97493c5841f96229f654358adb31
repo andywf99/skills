@@ -1,0 +1,40 @@
+install-claude-notify-hooks/SKILL.md
+  b6126a604983d590 1-2,4-89,92-102,104-113,115-131,134-136,138-139,141-146
+  8a4ac8a7b4711b4c 3,90-91,103,114,132-133,137,140,147-153
+install-claude-notify-hooks/scripts/feishu-notify.sh
+  b6126a604983d590 1,3-5
+  8a4ac8a7b4711b4c 2,6-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "1805fe45df1e97493c5841f96229f654358adb31",
+  "prompts": {
+    "8a4ac8a7b4711b4c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99e4363e-4151-4246-839f-51645f0848bb",
+        "model": "astron-code-latest"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 454,
+      "total_deletions": 306,
+      "accepted_lines": 162,
+      "overriden_lines": 0
+    },
+    "b6126a604983d590": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bfc6f9ba-8836-4dba-8bd9-1d0e87f58470",
+        "model": "glm-5.1"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 250,
+      "total_deletions": 74,
+      "accepted_lines": 141,
+      "overriden_lines": 0
+    }
+  }
+}
