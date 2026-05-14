@@ -67,29 +67,44 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
    ```
    脚本自动执行 `git diff`，过滤测试类，解析变更方法，输出结构化 JSON。若 `files` 为空则提示用户并结束。
 
-2. **扫描依赖**：
+2. **UAT 分支冲突检测与解决**：
+   ```bash
+   git fetch origin uat
+   git diff remotes/origin/uat -- '**/src/test/java/**'
+   ```
+   检查 UAT 分支上是否存在同名测试类的冲突变更。若存在冲突，按以下规则处理：
+   - 对比当前分支与 UAT 分支的测试覆盖率（行覆盖率 + 分支覆盖率），**以单测率最高的版本为准**。
+   - 若当前分支覆盖率更高：保留当前分支的测试代码，忽略 UAT 分支的冲突部分。
+   - 若 UAT 分支覆盖率更高：将 UAT 分支的测试代码合并到当前分支，并在此基础上补充当前分支变更方法的测试。
+   - 若覆盖率相同：保留测试用例数量更多的版本，并补充另一版本独有的场景。
+   - 覆盖率对比使用 `parse_coverage.py` 分别对两个版本的测试类执行，命令：
+     ```bash
+     python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 0 --tests "XxxTest"
+     ```
+
+3. **扫描依赖**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
    ```
    将步骤 1 输出中的文件路径传入，脚本自动识别依赖类型并输出需要的 `ref/ref-xxx.md` 列表。去重后一次性 `Read` 所需 ref 文件。
 
-3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
+4. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
 
-4. **批量生成测试**：为所有被测类生成增量测试（仅为 diff 中变更的方法），一次生成完毕。
+5. **批量生成测试**：为所有被测类生成增量测试（仅为 diff 中变更的方法），一次生成完毕。
 
-5. **运行验证**：
+6. **运行验证**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
    ```
    脚本自动运行 `mvn test`，解析输出，分类错误，输出结构化错误报告。根据 `category` 和 `priority` 字段逐个修复后重跑。
 
-6. **覆盖率检查**：
+7. **覆盖率检查**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
    脚本自动运行 `mvn test jacoco:report`，解析 XML 报告，输出未覆盖的方法和行号。针对性补充测试用例，循环直到达标。
 
-7. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
+8. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
    ```bash
    rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
    ```
@@ -102,26 +117,41 @@ python ~/.claude/skills/java-unittest/scripts/detect_framework.py {projectRoot}
    ```
    脚本自动校验 commit id 有效性，执行 `git diff {commitId}..HEAD`，过滤测试类，解析变更方法。若 `files` 为空则提示用户「指定 commit {commitId} 之后无代码变更，无需生成测试」，结束。
 
-2. **扫描依赖**：
+2. **UAT 分支冲突检测与解决**：
+   ```bash
+   git fetch origin uat
+   git diff remotes/origin/uat -- '**/src/test/java/**'
+   ```
+   检查 UAT 分支上是否存在同名测试类的冲突变更。若存在冲突，按以下规则处理：
+   - 对比当前分支与 UAT 分支的测试覆盖率（行覆盖率 + 分支覆盖率），**以单测率最高的版本为准**。
+   - 若当前分支覆盖率更高：保留当前分支的测试代码，忽略 UAT 分支的冲突部分。
+   - 若 UAT 分支覆盖率更高：将 UAT 分支的测试代码合并到当前分支，并在此基础上补充当前分支变更方法的测试。
+   - 若覆盖率相同：保留测试用例数量更多的版本，并补充另一版本独有的场景。
+   - 覆盖率对比使用 `parse_coverage.py` 分别对两个版本的测试类执行，命令：
+     ```bash
+     python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 0 --tests "XxxTest"
+     ```
+
+3. **扫描依赖**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/scan_dependencies.py {projectRoot} file1.java file2.java ...
    ```
 
-3. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
+4. **批量读取被测类**：用 `Read` 并行读取所有目标源文件，理解完整类结构和依赖。
 
-4. **批量生成测试**：为所有被测类生成增量测试（仅为 {commitId}..HEAD 的 diff 中变更的方法），一次生成完毕。
+5. **批量生成测试**：为所有被测类生成增量测试（仅为 {commitId}..HEAD 的 diff 中变更的方法），一次生成完毕。
 
-5. **运行验证**：
+6. **运行验证**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/parse_test_result.py {projectRoot} --tests "Class1Test,Class2Test,Class3Test"
    ```
 
-6. **覆盖率检查**：
+7. **覆盖率检查**：
    ```bash
    python ~/.claude/skills/java-unittest/scripts/parse_coverage.py {projectRoot} --threshold 90
    ```
 
-7. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
+8. **清理临时文件**：删除流程中生成的临时文件，避免污染 Git 工作区：
    ```bash
    rm -f {projectRoot}/.claude/test-framework-cache.json {projectRoot}/coverage_report.json
    ```
@@ -372,6 +402,11 @@ coverage_report.json
 - [ ] 已提供运行命令和报告路径
 **临时文件清理**：
 - [ ] 已删除 `.claude/test-framework-cache.json` 和 `coverage_report.json`
+
+**UAT 分支冲突处理**（仅增量模式和 commit 模式）：
+- [ ] 已检查 UAT 分支是否存在测试类冲突
+- [ ] 若存在冲突，已对比覆盖率并以单测率最高版本为准
+- [ ] 已合并覆盖率更高的测试代码并补充缺失场景
 
 
 ## 效率优化原则                                                                
