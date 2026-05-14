@@ -1,0 +1,25 @@
+.gitignore
+  f95664ac8574f403 41-44
+install-claude-notify-hooks/SKILL.md
+  f95664ac8574f403 78,81,87,97,110,121,132,156,166-168,174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "e9632c82258988644fdd1cc2296e5c363643c4f7",
+  "prompts": {
+    "f95664ac8574f403": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc5872c8-6f39-4cc8-80ce-84e072f925d1",
+        "model": "glm-5.1"
+      },
+      "human_author": "morax.ma",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 20,
+      "accepted_lines": 60,
+      "overriden_lines": 0
+    }
+  }
+}
