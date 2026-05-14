@@ -1,0 +1,713 @@
+modules:
+  - name: online
+    display_name: 飞兔IM
+    repos:
+      - id: 6917
+        name: yl-web-sqs-serviceonline
+        web_url: http://code.jms.com/yl/yl-web-sqs-serviceonline
+        http_url: http://code.jms.com/yl/yl-web-sqs-serviceonline.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-sqs-serviceonline.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 6919
+        name: yl-jms-sqs-online-third
+        web_url: http://code.jms.com/yl/yl-jms-sqs-online-third
+        http_url: http://code.jms.com/yl/yl-jms-sqs-online-third.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-online-third.git
+        layer: 第三方前台
+        gray_namespace: online
+      - id: 6918
+        name: yl-jms-sqs-online
+        web_url: http://code.jms.com/yl/yl-jms-sqs-online
+        http_url: http://code.jms.com/yl/yl-jms-sqs-online.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-online.git
+        layer: 中台
+        gray_namespace: online
+      - id: 5297
+        name: yl-jms-sqs-online-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-online-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-online-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-online-api.git
+        layer: 中台
+        gray_namespace: online
+      - id: 11513
+        name: yl-jms-sqs-online-chatbot-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-online-chatbot-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-online-chatbot-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-online-chatbot-api.git
+        layer: 中台
+        gray_namespace: online
+      - id: 12271
+        name: yl-jms-sqs-online-gateway
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-online-gateway
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-online-gateway.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-online-gateway.git
+        layer: 中台
+        gray_namespace: online
+
+  - name: networkim
+    display_name: 网点IM
+    repos:
+      - id: 14635
+        name: yl-jms-sqs-network-im-web
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-network-im-web
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-network-im-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-network-im-web.git
+        layer: 小前台
+        gray_namespace: networkim
+      - id: 14633
+        name: yl-jms-sqs-network-im-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-network-im-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-network-im-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-network-im-api.git
+        layer: 中台
+        gray_namespace: networkim
+      - id: 14634
+        name: yl-jms-sqs-network-im-ws-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-network-im-ws-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-network-im-ws-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-network-im-ws-api.git
+        layer: 中台
+        gray_namespace: networkim
+
+  - name: qt
+    display_name: 质检
+    repos:
+      - id: 9424
+        name: yl-jms-sqs-qt-manage-web
+        web_url: http://code.jms.com/yl/yl-jms-sqs-qt-manage-web
+        http_url: http://code.jms.com/yl/yl-jms-sqs-qt-manage-web.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-qt-manage-web.git
+        layer: 小前台
+        gray_namespace: qt
+      - id: 9278
+        name: yl-jms-sqs-check-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-check-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-check-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-check-api.git
+        layer: 中台
+        gray_namespace: checkapi
+      - id: 9425
+        name: yl-jms-sqs-qt-engine-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-qt-engine-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-qt-engine-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-qt-engine-api.git
+        layer: 中台
+        gray_namespace: qt
+      - id: 9426
+        name: yl-jms-sqs-qt-manage-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-qt-manage-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-qt-manage-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-qt-manage-api.git
+        layer: 中台
+        gray_namespace: qt
+
+  - name: workorderhub
+    display_name: 工单中心
+    repos:
+      - id: 13961
+        name: yl-jms-sqs-work-order-hub-web
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-work-order-hub-web
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-work-order-hub-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-work-order-hub-web.git
+        layer: 小前台
+        gray_namespace: workorderhub
+      - id: 13962
+        name: yl-jms-sqs-work-order-hub-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-work-order-hub-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-work-order-hub-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-work-order-hub-api.git
+        layer: 中台
+        gray_namespace: workorderhub
+      - id: 15320
+        name: yl-jms-sqs-work-order-hub-wf-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-work-order-hub-wf-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-work-order-hub-wf-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-work-order-hub-wf-api.git
+        layer: 中台
+        gray_namespace: workorderhub
+
+  - name: workorder
+    display_name: 普通工单
+    repos:
+      - id: 9834
+        name: yl-jms-wd-sqs-workorder-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-workorder-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-workorder-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-workorder-web.git
+        layer: 小前台
+        gray_namespace: workorder
+      - id: 5252
+        name: yl-web-sqs-workorder
+        web_url: http://code.jms.com/yl/yl-web-sqs-workorder
+        http_url: http://code.jms.com/yl/yl-web-sqs-workorder.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-sqs-workorder.git
+        layer: 小前台
+        gray_namespace: workorder
+      - id: 478
+        name: yl-jms-css-workorder-api
+        web_url: http://code.jms.com/yl/yl-jms-css-workorder-api
+        http_url: http://code.jms.com/yl/yl-jms-css-workorder-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-workorder-api.git
+        layer: 中台
+        gray_namespace: workorder
+
+  - name: sqsweb
+    display_name: JMS小前台
+    repos:
+      - id: 542
+        name: yl-web-servicequality
+        web_url: http://code.jms.com/yl/yl-web-servicequality
+        http_url: http://code.jms.com/yl/yl-web-servicequality.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-servicequality.git
+        layer: 小前台
+        gray_namespace: sqsweb
+
+  - name: wdsqsweb
+    display_name: 兔WIN小前台
+    repos:
+      - id: 9837
+        name: yl-jms-wd-sqs-servicequality-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-servicequality-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-servicequality-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-servicequality-web.git
+        layer: 小前台
+        gray_namespace: wdsqsweb
+
+  - name: zt
+    display_name: 智兔
+    repos:
+      - id: 1309
+        name: yl-jms-css-zt-api
+        web_url: http://code.jms.com/yl/yl-jms-css-zt-api
+        http_url: http://code.jms.com/yl/yl-jms-css-zt-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-zt-api.git
+        layer: 小前台
+        gray_namespace: zt
+      - id: 7352
+        name: yl-jms-sqs-zt-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-zt-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-zt-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-zt-api.git
+        layer: 中台
+        gray_namespace: zt
+
+  - name: platformorder
+    display_name: 平台工单
+    repos:
+      - id: 9836
+        name: yl-jms-wd-sqs-platformorder-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-platformorder-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-platformorder-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-platformorder-web.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 5250
+        name: yl-web-sqs-project-workorder
+        web_url: http://code.jms.com/yl/yl-web-sqs-project-workorder
+        http_url: http://code.jms.com/yl/yl-web-sqs-project-workorder.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-sqs-project-workorder.git
+        layer: 小前台
+        gray_namespace: platformorder
+      - id: 6942
+        name: yl-jms-sqs-third-cainiao-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-third-cainiao-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-third-cainiao-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-third-cainiao-api.git
+        layer: 第三方前台
+        gray_namespace: ""
+      - id: 6901
+        name: yl-jms-sqs-platformorder-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-platformorder-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-platformorder-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-platformorder-api.git
+        layer: 中台
+        gray_namespace: platformorder
+
+  - name: postal
+    display_name: 邮政工单
+    repos:
+      - id: 2254
+        name: yl-web-servicethird
+        web_url: http://code.jms.com/yl/yl-web-servicethird
+        http_url: http://code.jms.com/yl/yl-web-servicethird.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-servicethird.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 618
+        name: yl-jms-css-postal-api
+        web_url: http://code.jms.com/yl/yl-jms-css-postal-api
+        http_url: http://code.jms.com/yl/yl-jms-css-postal-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-postal-api.git
+        layer: 中台
+        gray_namespace: postal
+
+  - name: objection
+    display_name: 客服异议
+    repos:
+      - id: 658
+        name: yl-jms-css-objection-api
+        web_url: http://code.jms.com/yl/yl-jms-css-objection-api
+        http_url: http://code.jms.com/yl/yl-jms-css-objection-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-objection-api.git
+        layer: 中台
+        gray_namespace: objection
+
+  - name: callapi
+    display_name: 客服外呼
+    repos:
+      - id: 9080
+        name: yl-jms-sqs-call-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-call-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-call-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-call-api.git
+        layer: 中台
+        gray_namespace: callapi
+
+  - name: telephone
+    display_name: 95通话
+    repos:
+      - id: 9835
+        name: yl-jms-wd-sqs-telephone-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-telephone-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-telephone-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-telephone-web.git
+        layer: 小前台
+        gray_namespace: telephone
+      - id: 3354
+        name: yl-web-telephone
+        web_url: http://code.jms.com/yl/yl-web-telephone
+        http_url: http://code.jms.com/yl/yl-web-telephone.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-telephone.git
+        layer: 小前台
+        gray_namespace: telephone
+
+  - name: claim
+    display_name: 极速理赔
+    repos:
+      - id: 10959
+        name: yl-jms-sqs-claim-workorder-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-claim-workorder-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-claim-workorder-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-claim-workorder-api.git
+        layer: 中台
+        gray_namespace: claim
+
+  - name: inexport
+    display_name: 导入导出
+    repos:
+      - id: 14121
+        name: yl-jms-sqs-import-export-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-import-export-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-import-export-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-import-export-api.git
+        layer: 小前台+中台
+        gray_namespace: inexport
+
+  - name: qc
+    display_name: 质控
+    repos:
+      - id: 441
+        name: yl-jms-qc-api
+        web_url: http://code.jms.com/yl/yl-jms-qc-api
+        http_url: http://code.jms.com/yl/yl-jms-qc-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-qc-api.git
+        layer: 中台
+        gray_namespace: qcapi
+      - id: 12220
+        name: yl-jms-sqs-audio-parsing-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-audio-parsing-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-audio-parsing-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-audio-parsing-api.git
+        layer: 中台
+        gray_namespace: ""
+
+  - name: arbitration
+    display_name: 仲裁
+    repos:
+      - id: 607
+        name: yl-jms-css-arbitration-api
+        web_url: http://code.jms.com/yl/yl-jms-css-arbitration-api
+        http_url: http://code.jms.com/yl/yl-jms-css-arbitration-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-arbitration-api.git
+        layer: 中台
+        gray_namespace: arbitration
+
+  - name: problem
+    display_name: 问题件
+    repos:
+      - id: 12467
+        name: yl-jms-sqs-image-search-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-image-search-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-image-search-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-image-search-api.git
+        layer: 中台
+        gray_namespace: ""
+      - id: 8538
+        name: yl-jms-sqs-problem-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-problem-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-problem-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-problem-api.git
+        layer: 中台
+        gray_namespace: problem
+
+  - name: leavemessage
+    display_name: 留言
+    repos:
+      - id: 10955
+        name: yl-jms-sqs-leave-message-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-leave-message-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-leave-message-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-leave-message-api.git
+        layer: 中台
+        gray_namespace: ""
+
+  - name: jms-report
+    display_name: JMS导出
+    repos:
+      - id: 425
+        name: yl-jms-css-report
+        web_url: http://code.jms.com/yl/yl-jms-css-report
+        http_url: http://code.jms.com/yl/yl-jms-css-report.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-report.git
+        layer: 中台
+        gray_namespace: report
+
+  - name: wd-report
+    display_name: 兔WIN导出
+    repos:
+      - id: 9840
+        name: yl-jms-wd-sqs-report-api
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-report-api
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-report-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-report-api.git
+        layer: 中台
+        gray_namespace: report
+
+  - name: smart
+    display_name: 兔智星
+    repos:
+      - id: 13276
+        name: yl-jms-sqs-smart-workbench-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-smart-workbench-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-smart-workbench-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-smart-workbench-api.git
+        layer: 小前台+中台
+        gray_namespace: smart
+
+  - name: cswot
+    display_name: 出港智能跟单
+    repos:
+      - id: 10267
+        name: yl-jms-sqs-cswot-manage-web
+        web_url: http://code.jms.com/yl/yl-jms-sqs-cswot-manage-web
+        http_url: http://code.jms.com/yl/yl-jms-sqs-cswot-manage-web.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-cswot-manage-web.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 11070
+        name: yl-jms-wd-sqs-cswot-manage-web
+        web_url: http://code.jms.com/project/jms/wd/yl-jms-wd-sqs-cswot-manage-web
+        http_url: http://code.jms.com/project/jms/wd/yl-jms-wd-sqs-cswot-manage-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/wd/yl-jms-wd-sqs-cswot-manage-web.git
+        layer: 小前台
+        gray_namespace: cswot
+      - id: 10262
+        name: yl-jms-sqs-cswot-analyze-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-cswot-analyze-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-cswot-analyze-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-cswot-analyze-api.git
+        layer: 中台
+        gray_namespace: cswot
+      - id: 10618
+        name: yl-jms-sqs-cswot-cfgcenter-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-cswot-cfgcenter-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-cswot-cfgcenter-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-cswot-cfgcenter-api.git
+        layer: 中台
+        gray_namespace: cswot
+      - id: 10324
+        name: yl-jms-sqs-cswot-decode-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-cswot-decode-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-cswot-decode-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-cswot-decode-api.git
+        layer: 中台
+        gray_namespace: cswot
+      - id: 10261
+        name: yl-jms-sqs-cswot-gather-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-cswot-gather-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-cswot-gather-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-cswot-gather-api.git
+        layer: 中台
+        gray_namespace: cswot
+      - id: 10266
+        name: yl-jms-sqs-cswot-manage-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-cswot-manage-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-cswot-manage-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-cswot-manage-api.git
+        layer: 中台
+        gray_namespace: cswot
+
+  - name: callquality
+    display_name: 通话质检
+    repos:
+      - id: 13763
+        name: yl-jms-sqs-call-quality-web
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-call-quality-web
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-call-quality-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-call-quality-web.git
+        layer: 小前台+中台
+        gray_namespace: callquality
+
+  - name: outsourced
+    display_name: 外包客服
+    repos:
+      - id: 356
+        name: yl-web-outsourced-service
+        web_url: http://code.jms.com/yl/yl-web-outsourced-service
+        http_url: http://code.jms.com/yl/yl-web-outsourced-service.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-outsourced-service.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 536
+        name: yl-web-servicequality-online
+        web_url: http://code.jms.com/yl/yl-web-servicequality-online
+        http_url: http://code.jms.com/yl/yl-web-servicequality-online.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-servicequality-online.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 669
+        name: yl-css-outsourced-service-api
+        web_url: http://code.jms.com/yl/yl-css-outsourced-service-api
+        http_url: http://code.jms.com/yl/yl-css-outsourced-service-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-css-outsourced-service-api.git
+        layer: 中台
+        gray_namespace: outsourced
+      - id: 311
+        name: yl-jms-css-pdd
+        web_url: http://code.jms.com/yl/yl-jms-css-pdd
+        http_url: http://code.jms.com/yl/yl-jms-css-pdd.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-pdd.git
+        layer: 中台
+        gray_namespace: pdd
+      - id: 537
+        name: yl-jms-css-pdd-api
+        web_url: http://code.jms.com/yl/yl-jms-css-pdd-api
+        http_url: http://code.jms.com/yl/yl-jms-css-pdd-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-pdd-api.git
+        layer: 中台
+        gray_namespace: pdd
+
+  - name: css
+    display_name: 公共中台
+    repos:
+      - id: 642
+        name: yl-jms-css-api
+        web_url: http://code.jms.com/yl/yl-jms-css-api
+        http_url: http://code.jms.com/yl/yl-jms-css-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-api.git
+        layer: 中台
+        gray_namespace: cssapi
+
+  - name: exception
+    display_name: 异常管理
+    repos:
+      - id: 1666
+        name: yl-jms-css-exception-api
+        web_url: http://code.jms.com/yl/yl-jms-css-exception-api
+        http_url: http://code.jms.com/yl/yl-jms-css-exception-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-exception-api.git
+        layer: 中台
+        gray_namespace: exception
+
+  - name: sts
+    display_name: 指标统计
+    repos:
+      - id: 10063
+        name: yl-jms-wd-sqs-servicests-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-servicests-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-servicests-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-servicests-web.git
+        layer: 小前台
+        gray_namespace: sts
+      - id: 1997
+        name: yl-web-servicests
+        web_url: http://code.jms.com/yl/yl-web-servicests
+        http_url: http://code.jms.com/yl/yl-web-servicests.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-servicests.git
+        layer: 小前台
+        gray_namespace: ""
+      - id: 11561
+        name: yl-jms-sqs-report-mail-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-report-mail-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-report-mail-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-report-mail-api.git
+        layer: 中台
+        gray_namespace: reportmail
+      - id: 1998
+        name: yl-jms-sts-api
+        web_url: http://code.jms.com/yl/yl-jms-sts-api
+        http_url: http://code.jms.com/yl/yl-jms-sts-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sts-api.git
+        layer: 中台
+        gray_namespace: sts
+      - id: 327
+        name: yl-nwm-report-api
+        web_url: http://code.jms.com/yl/yl-nwm-report-api
+        http_url: http://code.jms.com/yl/yl-nwm-report-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-nwm-report-api.git
+        layer: 中台
+        gray_namespace: nvmreport
+
+  - name: security
+    display_name: 安全管理
+    repos:
+      - id: 7270
+        name: yl-jms-sqs-security-api
+        web_url: http://code.jms.com/yl/yl-jms-sqs-security-api
+        http_url: http://code.jms.com/yl/yl-jms-sqs-security-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-sqs-security-api.git
+        layer: 中台
+        gray_namespace: security
+
+  - name: visitoropenapi
+    display_name: 访客开放API
+    repos:
+      - id: 15727
+        name: yl-jms-sqs-visitor-open-api
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-visitor-open-api
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-visitor-open-api.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-visitor-open-api.git
+        layer: 小前台
+        gray_namespace: visitoropenapi
+
+  - name: approval
+    display_name: 流程审批
+    repos:
+      - id: 1427
+        name: yl-jms-css-approval-api
+        web_url: http://code.jms.com/yl/yl-jms-css-approval-api
+        http_url: http://code.jms.com/yl/yl-jms-css-approval-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-approval-api.git
+        layer: 中台
+        gray_namespace: approval
+
+  - name: datacenter
+    display_name: 数据中心
+    repos:
+      - id: 4585
+        name: yl-jms-css-datacenter-api
+        web_url: http://code.jms.com/yl/yl-jms-css-datacenter-api
+        http_url: http://code.jms.com/yl/yl-jms-css-datacenter-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-datacenter-api.git
+        layer: 中台
+        gray_namespace: datacenter
+
+  - name: documentary
+    display_name: 主动跟单
+    repos:
+      - id: 9839
+        name: yl-jms-wd-sqs-documentary-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-documentary-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-documentary-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-documentary-web.git
+        layer: 小前台
+        gray_namespace: documentary
+      - id: 2052
+        name: yl-web-servicedocumentary
+        web_url: http://code.jms.com/yl/yl-web-servicedocumentary
+        http_url: http://code.jms.com/yl/yl-web-servicedocumentary.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-servicedocumentary.git
+        layer: 小前台
+        gray_namespace: documentary
+
+  - name: sqsapp
+    display_name: 飞书报表
+    repos:
+      - id: 7363
+        name: yl-jms-web-sqs-app
+        web_url: http://code.jms.com/yl/yl-jms-web-sqs-app
+        http_url: http://code.jms.com/yl/yl-jms-web-sqs-app.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-web-sqs-app.git
+        layer: 小前台
+        gray_namespace: ""
+
+  - name: customersupport
+    display_name: 客服支持小前台
+    repos:
+      - id: 13198
+        name: yl-jms-sqs-customer-support-web
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-customer-support-web
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-customer-support-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-customer-support-web.git
+        layer: 小前台
+        gray_namespace: ""
+
+  - name: thirdrobot
+    display_name: 第三方机器人
+    repos:
+      - id: 11812
+        name: yl-jms-sqs-third-robot
+        web_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-third-robot
+        http_url: http://code.jms.com/project/jms/sqs/yl-jms-sqs-third-robot.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/sqs/yl-jms-sqs-third-robot.git
+        layer: 第三方前台
+        gray_namespace: thirdrobot
+
+  - name: third
+    display_name: 第三方服务
+    repos:
+      - id: 450
+        name: yl-jms-third
+        web_url: http://code.jms.com/yl/yl-jms-third
+        http_url: http://code.jms.com/yl/yl-jms-third.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-third.git
+        layer: 小前台
+        gray_namespace: third
+
+  - name: internalthird
+    display_name: 内部第三方服务
+    repos:
+      - id: 9875
+        name: yl-jms-wd-sqs-third-web
+        web_url: http://code.jms.com/project/jms/wd/yl-jms-wd-sqs-third-web
+        http_url: http://code.jms.com/project/jms/wd/yl-jms-wd-sqs-third-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jms/wd/yl-jms-wd-sqs-third-web.git
+        layer: 小前台
+        gray_namespace: wdsqsthirdweb
+      - id: 5253
+        name: yl-web-sqs-third
+        web_url: http://code.jms.com/yl/yl-web-sqs-third
+        http_url: http://code.jms.com/yl/yl-web-sqs-third.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-sqs-third.git
+        layer: 小前台
+        gray_namespace: sqsthird
+
+  - name: exception-event
+    display_name: 异常事件
+    repos:
+      - id: 9838
+        name: yl-jms-wd-sqs-exception-web
+        web_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-exception-web
+        http_url: http://code.jms.com/project/jbs/wd/yl-jms-wd-sqs-exception-web.git
+        ssh_url: ssh://git@code.jms.com:2222/project/jbs/wd/yl-jms-wd-sqs-exception-web.git
+        layer: 小前台
+        gray_namespace: exception
+      - id: 2017
+        name: yl-web-serviceexception
+        web_url: http://code.jms.com/yl/yl-web-serviceexception
+        http_url: http://code.jms.com/yl/yl-web-serviceexception.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-web-serviceexception.git
+        layer: 小前台
+        gray_namespace: exception
+
+  - name: library
+    display_name: 知识库
+    repos:
+      - id: 1320
+        name: yl-jms-css-library-api
+        web_url: http://code.jms.com/yl/yl-jms-css-library-api
+        http_url: http://code.jms.com/yl/yl-jms-css-library-api.git
+        ssh_url: ssh://git@code.jms.com:2222/yl/yl-jms-css-library-api.git
+        layer: 中台
+        gray_namespace: library

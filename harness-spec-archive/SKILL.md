@@ -1,6 +1,6 @@
----
+﻿---
 name: harness-spec-archive
-description: 将 docs/demand 下的需求文档归档并生成摘要文档，适用于归档需求目录、生成 docs/context/summaries 摘要、更新 docs/context/memory/memory.md、按需删除或保留原始需求文档。
+description: 将 docs/memory/demand 下的需求文档归档并生成摘要文档，适用于归档需求目录、生成 docs/memory/summaries 摘要、更新 docs/memory/memory.md、按需删除或保留原始需求文档。
 ---
 
 # Harness Spec Archive Skill
@@ -9,9 +9,9 @@ description: 将 docs/demand 下的需求文档归档并生成摘要文档，适
 
 ## 何时使用
 
-- 用户要求归档需求文档、生成需求摘要、清理 `docs/demand/*/` 目录。
+- 用户要求归档需求文档、生成需求摘要、清理 `docs/memory/demand/*/` 目录。
 - 用户提到 `jt:spec-archive`、`spec archive`、`需求归档`、`summary`、`summaries`。
-- 用户要求把接口变更记录到 `docs/context/memory/memory.md`。
+- 用户要求把接口变更记录到 `docs/memory/memory.md`。
 
 ## 执行入口
 
@@ -23,7 +23,7 @@ python .\skills\harness-spec-archive\spec_archive.py [demand-name] [--force] [--
 
 参数：
 
-- `demand-name`：可选，只归档指定需求；不传则归档全部 `docs/demand/*/`。
+- `demand-name`：可选，只归档指定需求；不传则归档全部 `docs/memory/demand/*/`。
 - `--force` / `-f`：覆盖已存在摘要文件。
 - `--keep` / `-k`：保留原始需求目录。
 
@@ -31,25 +31,24 @@ python .\skills\harness-spec-archive\spec_archive.py [demand-name] [--force] [--
 
 ### Step 1: 扫描需求目录
 
-扫描 `docs/demand/` 下的需求子目录，每个子目录代表一个需求。
+扫描 `docs/memory/demand/` 下的需求子目录，每个子目录代表一个需求。
 
 ### Step 2: 生成摘要文档
 
-为每个需求生成 `docs/context/summaries/{demand-name}-summary.md`。
+为每个需求生成 `docs/memory/summaries/{yyyy-MM-dd}-{demand-name}.md`。
 
 摘要必须保留以下固定章节：
 
 1. 文档清单
 2. 需求概述
 3. 核心内容摘要
-4. 文档路径
-5. 需求文档内容
-6. Review 评审内容
-7. Research 深挖内容
-8. Plan 规划内容
-9. 概要设计内容
+4. 需求文档内容
+5. Review 评审内容
+6. Research 深挖内容
+7. Plan 规划内容
+8. 概要设计内容
 
-关键要求：第 5-9 章不是粘贴全文，而是从对应文档里“淘”出核心内容：
+关键要求：第 4-8 章不是粘贴全文，而是从对应文档里“淘”出核心内容：
 
 - 需求文档内容：提取需求背景、业务目标、业务规则、字段/页面/流程变更、验收口径、约束条件。
 - Review 评审内容：提取评审结论、待澄清问题、风险点、确认结果、需要调整的需求点。
@@ -59,7 +58,7 @@ python .\skills\harness-spec-archive\spec_archive.py [demand-name] [--force] [--
 
 ### Step 3: 检查目标文件是否存在
 
-检查 `docs/context/summaries/{demand-name}-summary.md` 是否已存在：
+检查 `docs/memory/summaries/{yyyy-MM-dd}-{demand-name}.md` 是否已存在：
 
 - 默认跳过已存在文件。
 - `--force`：覆盖旧摘要。
@@ -67,15 +66,15 @@ python .\skills\harness-spec-archive\spec_archive.py [demand-name] [--force] [--
 
 ### Step 4: 记录系统影响
 
-将接口变更记录到 `docs/context/memory/memory.md`。最小粒度为接口级别；如果没有接口变更，记录归档操作本身。
+将需求主要系统影响记录到 `docs/memory/memory.md`。最小粒度优先到接口级别；如果没有明确接口变更，也要记录本次需求主要做了什么、影响了哪些页面/配置/数据/流程。脚本自动追加的归档记录只作为初稿，归档后需要结合摘要内容修正为真实业务影响，不要只写“需求文档归档”。
 
 ### Step 5: 清理原始文件
 
-默认删除 `docs/demand/{demand-name}/` 整个目录；使用 `--keep` 时保留。
+默认删除 `docs/memory/demand/{demand-name}/` 整个目录；使用 `--keep` 时保留。
 
 ## 输出要求
 
-- 摘要文件必须保留原始文档路径，便于追溯。
+- 默认删除原始需求目录时，摘要文件不要保留已失效的 `docs/memory/demand/...` 文档路径；使用 `--keep` 保留原始需求目录时，可以保留需求路径，并以 `## 附：文档路径` 记录原始文档路径便于追溯。
 - 摘要文件必须抽取核心内容，避免把原始文档全文搬运进归档摘要。
 - 原文中确实关键的表格、接口清单、字段清单、结论列表可以保留，但要删除重复说明、过程性推理、临时记录和无关上下文。
 - 已存在摘要文件时默认跳过，除非用户明确要求覆盖或传入 `--force`。
@@ -89,20 +88,18 @@ python .\skills\harness-spec-archive\spec_archive.py [demand-name] [--force] [--
 # 需求摘要：{需求名称}
 
 **归档时间**：{归档时间}
-**需求路径**：`docs/demand/{需求名称}/`
 
 ## 1. 文档清单
 ## 2. 需求概述
 ## 3. 核心内容摘要
-## 4. 文档路径
-## 5. 需求文档内容
+## 4. 需求文档内容
 {从需求文档.md提取核心内容，不贴全文}
-## 6. Review 评审内容
+## 5. Review 评审内容
 {从 review.md 提取评审结论、待确认问题、风险与调整项，不贴全文}
-## 7. Research 深挖内容
+## 6. Research 深挖内容
 {从 research.md 提取技术方案、关键决策、依赖与风险，不贴全文}
-## 8. Plan 规划内容
+## 7. Plan 规划内容
 {从 plan.md 提取实施步骤、改动清单、发布验证与回滚点，不贴全文}
-## 9. 概要设计内容
+## 8. 概要设计内容
 {从概要设计.md提取设计要点、接口、数据结构、配置、任务、消息等核心内容，不贴全文}
 ```

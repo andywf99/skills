@@ -1,4 +1,4 @@
----
+﻿---
 name: harness-change-project
 description: 修改子模块 AGENTS.md 中的绑定项目代码章节，支持新增、删除、修改项目。默认从 module-registry.yaml 获取 Git 地址，若不存在则要求用户提供。
 triggers:
@@ -91,8 +91,8 @@ triggers:
 
 | 序号 | 仓库名 | 层级 | 目录路径 |
 |------|--------|------|----------|
-| 1 | `yl-web-sqs-serviceonline` | 小前台 | `codes/workspace/yl-web-sqs-serviceonline` |
-| 2 | `yl-jms-sqs-online` | 中台 | `codes/workspace/yl-jms-sqs-online` |
+| 1 | `yl-web-sqs-serviceonline` | 小前台 | `codes/yl-web-sqs-serviceonline` |
+| 2 | `yl-jms-sqs-online` | 中台 | `codes/yl-jms-sqs-online` |
 
 ### 克隆业务代码
 
@@ -101,7 +101,7 @@ triggers:
 cd modules/{module-name}
 
 # 克隆业务代码到工作区（HTTP 方式）
-cd codes/workspace
+cd codes
 git clone {http_url} {repo-name}
 
 # 或使用 SSH 方式克隆（推荐）
