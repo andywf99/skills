@@ -1,0 +1,23 @@
+java-unittest/SKILL.md
+  dfa4b0bb35dce932 70-85,91,93,95,101,107,120-135,140,142,144,149,154,406-410
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "1b9431e9b4218b34993ebd205fe323d306b8b41a",
+  "prompts": {
+    "dfa4b0bb35dce932": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b3d3c2d-6222-4b19-8c8c-de0016c91d15",
+        "model": "astron-code-latest"
+      },
+      "human_author": "黄继谦",
+      "messages": [],
+      "total_additions": 47,
+      "total_deletions": 12,
+      "accepted_lines": 47,
+      "overriden_lines": 0
+    }
+  }
+}
