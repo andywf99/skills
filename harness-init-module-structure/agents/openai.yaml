@@ -1,0 +1,4 @@
+interface:
+  display_name: "Init Harness Module"
+  short_description: "Scaffold a standard harness module structure"
+  default_prompt: "Use $harness-init-module-structure to scaffold a new harness module."

@@ -1,0 +1,23 @@
+﻿name: __MODULE_NAME__
+description: 自包含 Harness 模块
+status: design-seeded
+entrypoints:
+  architecture: .harness/harness-overview.md
+  directory_layout: .harness/directory-layout.md
+  runtime_lifecycle: .harness/runtime-lifecycle.md
+  tech_whitepaper: docs/domain/TechWhitepaper.md
+  manifest: .module-manifest.yaml
+memory_files:
+  - AGENTS.md
+  - docs/memory/memory.md
+spec_paths:
+  - docs/memory/demand
+skill_paths:
+  - skills/__MODULE_NAME__-analyst
+  - skills/__MODULE_NAME__-operator
+  - skills/__MODULE_NAME__-reviewer
+context_paths:
+  - docs/memory
+workspace_paths:
+  - codes
+

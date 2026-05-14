@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Spec Archive Script
@@ -19,8 +19,8 @@ class SpecArchive:
 
     def __init__(self, project_root: str):
         self.project_root = Path(project_root)
-        self.demand_dir = self.project_root / "docs" / "demand"
-        self.summaries_dir = self.project_root / "docs" / "context" / "summaries"
+        self.demand_dir = self.project_root / "docs" / "memory" / "demand"
+        self.summaries_dir = self.project_root / "docs" / "memory" / "summaries"
 
         # 确保summaries目录存在
         self.summaries_dir.mkdir(parents=True, exist_ok=True)
@@ -387,8 +387,8 @@ class SpecArchive:
 
     def record_to_memory(self, demand_name: str, interface_changes: List[Dict]):
         """将接口变更记录追加到 memory.md"""
-        memory_dir = self.project_root / "docs" / "context" / "memory"
-        memory_file = memory_dir / "memory.md"
+        memory_file = self.project_root / "docs" / "memory" / "memory.md"
+        memory_dir = memory_file.parent
 
         # 确保目录存在
         memory_dir.mkdir(parents=True, exist_ok=True)
@@ -422,7 +422,7 @@ class SpecArchive:
   变更类型：归档
   接口：无
   接口功能：需求文档归档
-  影响说明：已将需求文档归档至 docs/summaries/{demand_name}-summary.md
+  影响说明：已将需求文档归档至 docs/memory/summaries/{datetime.now().strftime('%Y-%m-%d')}-{demand_name}.md
 """
             new_records.append(record)
 
@@ -440,7 +440,7 @@ class SpecArchive:
 
         print(f"  📝 已记录系统影响到 memory.md")
 
-    def generate_summary_doc(self, demand_name: str) -> str:
+    def generate_summary_doc(self, demand_name: str, keep_paths: bool = False) -> str:
         """生成摘要文档内容，整合所有文档核心内容"""
         demand_path = self.demand_dir / demand_name
 
@@ -473,7 +473,13 @@ class SpecArchive:
         content = f"""# 需求摘要：{demand_name}
 
 **归档时间**：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**需求路径**：`docs/demand/{demand_name}/`
+"""
+
+        if keep_paths:
+            content += f"""**需求路径**：`docs/memory/demand/{demand_name}/`
+"""
+
+        content += f"""
 
 ---
 
@@ -519,42 +525,48 @@ class SpecArchive:
 
 ---
 
-## 4. 文档路径
+"""
+
+        if keep_paths:
+            content += """
+## 附：文档路径
 
 """
 
-        for doc_name in doc_names:
-            doc_path = f"docs/demand/{demand_name}/{doc_name}"
-            content += f"- {doc_name.replace('.md', '')}：`{doc_path}`\n"
+            for doc_name in doc_names:
+                doc_path = f"docs/memory/demand/{demand_name}/{doc_name}"
+                content += f"- {doc_name.replace('.md', '')}：`{doc_path}`\n"
 
-        content += f"""
+            content += """
 ---
 
-## 5. 需求文档内容
+"""
+
+        content += f"""## 4. 需求文档内容
 
 {demand_summary}
 
 ---
 
-## 6. Review 评审内容
+## 5. Review 评审内容
 
 {review_summary}
 
 ---
 
-## 7. Research 深挖内容
+## 6. Research 深挖内容
 
 {research_summary}
 
 ---
 
-## 8. Plan 规划内容
+## 7. Plan 规划内容
 
 {plan_summary}
 
 ---
 
-## 9. 概要设计内容
+## 8. 概要设计内容
 
 {design_summary}
 """
@@ -593,7 +605,8 @@ class SpecArchive:
             force: 强制覆盖已存在的摘要文件
             keep: 保留原始文件（不删除）
         """
-        summary_file = self.summaries_dir / f"{demand_name}-summary.md"
+        archive_date = datetime.now().strftime('%Y-%m-%d')
+        summary_file = self.summaries_dir / f"{archive_date}-{demand_name}.md"
 
         # 检查文件是否已存在
         if summary_file.exists() and not force:
@@ -602,7 +615,7 @@ class SpecArchive:
             return False
 
         # 生成摘要文档
-        content = self.generate_summary_doc(demand_name)
+        content = self.generate_summary_doc(demand_name, keep_paths=keep)
 
         # 写入文件
         with open(summary_file, 'w', encoding='utf-8') as f:

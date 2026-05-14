@@ -1,0 +1,7 @@
+﻿# IDE
+.idea/
+.claude/
+
+# 业务代码工作区
+codes/*
+!codes/.gitkeep
